@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: cmake -B build && cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Build C library
+        run: cmake -B build && cmake --build build
+      - name: Install
+        run: pip install -e ".[png]" pytest
+      - name: Test
+        run: python -m pytest tests/ -v

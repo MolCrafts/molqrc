@@ -1,0 +1,13 @@
+build/
+*.o
+*.so
+*.dylib
+*.dll
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+*.png
+molqrc/libmolqrc.*
+molqrc/molqrc.dll
+dist/

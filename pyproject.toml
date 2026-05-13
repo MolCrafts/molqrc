@@ -1,0 +1,20 @@
+[build-system]
+requires = ["scikit-build-core"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "molcrafts-molqrc"
+version = "0.1.0"
+description = "Zero-dependency QR Code generator — C library + Python CLI"
+requires-python = ">=3.9"
+license = {text = "BSD-3-Clause"}
+
+[project.optional-dependencies]
+png = ["Pillow"]
+
+[project.scripts]
+molqrc = "molqrc.cli:main"
+
+[tool.scikit-build]
+cmake.version = ">=3.14"
+wheel.packages = ["molqrc"]
