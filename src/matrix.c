@@ -33,14 +33,16 @@ static const int g_version_info[34] = {
 /*  Helper: set/clear a module                                         */
 /* ------------------------------------------------------------------ */
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-overflow"
 static inline void set_module(unsigned char *m, int side, int r, int c,
                               int val) {
-  if (r >= 0 && r < side && c >= 0 && c < side)
-    m[r * side + c] = (unsigned char)(val ? 1 : 0);
+  if (side <= 0)
+    return;
+  if (r < 0 || c < 0 || r >= side || c >= side)
+    return;
+
+  size_t idx = (size_t)r * (size_t)side + (size_t)c;
+  m[idx] = (unsigned char)(val ? 1 : 0);
 }
-#pragma GCC diagnostic pop
 
 /* ------------------------------------------------------------------ */
 /*  Finder patterns (3 corners)                                        */
