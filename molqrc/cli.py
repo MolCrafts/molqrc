@@ -11,7 +11,6 @@ Usage:
 import argparse
 import os
 import sys
-import tempfile
 import webbrowser
 
 
@@ -57,13 +56,13 @@ def main():
 
     wb = web_sub.add_parser("build", help="Build static web page")
     wb.add_argument("text", help="Text to encode")
-    wb.add_argument("-o", "--output", default="molqrc_web", help="Output directory")
+    wb.add_argument("-o", "--output", default="build", help="Output directory")
     wb.add_argument("--title", default="QR Code", help="Page title")
     add_encode_args(wb)
 
     ws = web_sub.add_parser("serve", help="Build + serve locally")
     ws.add_argument("text", help="Text to encode")
-    ws.add_argument("-o", "--output", help="Output directory (temp dir if omitted)")
+    ws.add_argument("-o", "--output", default="build", help="Output directory")
     ws.add_argument("--port", type=int, default=8080, help="Port")
     ws.add_argument(
         "--open", action="store_true", dest="open_browser", help="Auto-open browser"
@@ -130,7 +129,7 @@ def _web_serve(text, output, *, port=8080, open_browser=False, title="QR Code", 
     import time
 
     qr = _make_qr(text, **kw)
-    dir_path = output or tempfile.mkdtemp(prefix="molqrc_web_")
+    dir_path = output
     qr.to_web(dir_path, title=title)
 
     class Handler(http.server.SimpleHTTPRequestHandler):

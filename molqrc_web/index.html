@@ -1,43 +1,17 @@
-"""Interactive web page generator for QR Codes.
-
-Generates a single self-contained index.html with inline CSS and
-a pure-JS QR encoder — fully interactive text input, style
-customisation, ECL/version/mask controls, and download.  No external dependencies.
-"""
-
-import json
-import os
-
-
-def generate(matrix, side, dir_path, *, title="QR Code", text=""):
-    """Generate a self-contained interactive web page.
-
-    Args:
-        matrix: bytearray of side*side bytes (0=white, 1=black).
-        side: QR Code side length in modules.
-        dir_path: Directory to write index.html into (created if needed).
-        title: HTML page title.
-        text: The original encoded text (pre-fills the input).
-    """
-    os.makedirs(dir_path, exist_ok=True)
-
-    matrix_json = json.dumps(list(matrix))
-    text_json = json.dumps(text)
-
-    html = f"""<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{_escape(title)} | molqrc</title>
+<title>QR Code | molqrc</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'><rect x='2' y='2' width='8' height='8' rx='1.5' fill='white'/><rect x='12' y='2' width='6' height='8' rx='1.5' fill='white'/><rect x='20' y='2' width='8' height='8' rx='1.5' fill='white'/><rect x='2' y='12' width='8' height='6' rx='1.5' fill='white'/><rect x='12' y='12' width='8' height='8' rx='1.5' fill='%2303a3d7'/><rect x='22' y='12' width='6' height='6' rx='1.5' fill='white'/><rect x='2' y='20' width='8' height='8' rx='1.5' fill='white'/><rect x='12' y='22' width='8' height='6' rx='1.5' fill='white'/><rect x='22' y='20' width='6' height='6' rx='1.5' fill='white'/></svg>">
 <style>
 /* ===================================================================
    Reset & Base
    =================================================================== */
-*, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-:root {{
+:root {
   --bg: #0a0f14;
   --surface: rgba(15, 25, 35, 0.85);
   --surface-border: rgba(255, 255, 255, 0.08);
@@ -48,9 +22,9 @@ def generate(matrix, side, dir_path, *, title="QR Code", text=""):
   --glow: rgba(16, 185, 129, 0.3);
   --radius: 16px;
   --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}}
+}
 
-body {{
+body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg);
   color: var(--text);
@@ -59,60 +33,60 @@ body {{
   flex-direction: column;
   align-items: center;
   overflow-x: hidden;
-}}
+}
 
 /* ===================================================================
    Animated Background
    =================================================================== */
-.bg-mesh {{
+.bg-mesh {
   position: fixed;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-}}
+}
 
-.bg-orb {{
+.bg-orb {
   position: absolute;
   border-radius: 50%;
   filter: blur(120px);
   opacity: 0.4;
   animation: orbFloat 20s ease-in-out infinite;
-}}
+}
 
-.bg-orb:nth-child(1) {{
+.bg-orb:nth-child(1) {
   width: 600px; height: 600px;
   background: radial-gradient(circle, var(--accent), transparent);
   top: -200px; left: -150px;
   animation-delay: 0s;
-}}
+}
 
-.bg-orb:nth-child(2) {{
+.bg-orb:nth-child(2) {
   width: 500px; height: 500px;
   background: radial-gradient(circle, var(--accent2), transparent);
   bottom: -150px; right: -150px;
   animation-delay: -7s;
-}}
+}
 
-.bg-orb:nth-child(3) {{
+.bg-orb:nth-child(3) {
   width: 400px; height: 400px;
   background: radial-gradient(circle, #fd79a8, transparent);
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   animation-delay: -13s;
-}}
+}
 
-@keyframes orbFloat {{
-  0%, 100% {{ transform: translate(0, 0) scale(1); }}
-  25% {{ transform: translate(60px, -40px) scale(1.1); }}
-  50% {{ transform: translate(-30px, 50px) scale(0.9); }}
-  75% {{ transform: translate(-50px, -30px) scale(1.05); }}
-}}
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(60px, -40px) scale(1.1); }
+  50% { transform: translate(-30px, 50px) scale(0.9); }
+  75% { transform: translate(-50px, -30px) scale(1.05); }
+}
 
 /* ===================================================================
    Layout
    =================================================================== */
-.app {{
+.app {
   position: relative;
   z-index: 1;
   width: 100%;
@@ -122,29 +96,29 @@ body {{
   flex-direction: column;
   align-items: center;
   gap: 24px;
-}}
+}
 
 /* ===================================================================
    Header
    =================================================================== */
-.header {{
+.header {
   text-align: center;
   padding-top: 12px;
-}}
+}
 
-.header-logo {{
+.header-logo {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 6px;
-}}
+}
 
-.header-logo svg {{
+.header-logo svg {
   width: 36px;
   height: 36px;
-}}
+}
 
-.header h1 {{
+.header h1 {
   font-size: 2.2rem;
   font-weight: 700;
   background: linear-gradient(135deg, var(--accent2), var(--accent));
@@ -152,30 +126,30 @@ body {{
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.5px;
-}}
+}
 
-.header .tagline {{
+.header .tagline {
   font-size: 0.9rem;
   color: var(--text-muted);
   margin-top: 2px;
-}}
+}
 
 /* ===================================================================
    Main Layout
    =================================================================== */
-.main {{
+.main {
   display: flex;
   gap: 24px;
   width: 100%;
   flex-wrap: wrap;
   justify-content: center;
   align-items: flex-start;
-}}
+}
 
 /* ===================================================================
    Glass Card
    =================================================================== */
-.glass {{
+.glass {
   background: var(--surface);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius);
@@ -183,31 +157,31 @@ body {{
   -webkit-backdrop-filter: blur(24px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   padding: 24px;
-}}
+}
 
 /* ===================================================================
    Controls Panel
    =================================================================== */
-.controls {{
+.controls {
   flex: 1 1 320px;
   max-width: 420px;
   display: flex;
   flex-direction: column;
   gap: 18px;
-}}
+}
 
-.control-group {{ display: flex; flex-direction: column; gap: 6px; }}
+.control-group { display: flex; flex-direction: column; gap: 6px; }
 
-.control-group label {{
+.control-group label {
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);
-}}
+}
 
 .control-group input[type="text"],
-.control-group input[type="number"] {{
+.control-group input[type="number"] {
   width: 100%;
   padding: 10px 14px;
   border: 1px solid rgba(255,255,255,0.12);
@@ -218,15 +192,15 @@ body {{
   transition: var(--transition);
   outline: none;
   font-family: inherit;
-}}
+}
 
 .control-group input[type="text"]:focus,
-.control-group input[type="number"]:focus {{
+.control-group input[type="number"]:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--glow);
-}}
+}
 
-.control-group select {{
+.control-group select {
   width: 100%;
   padding: 10px 14px;
   border: 1px solid rgba(255,255,255,0.12);
@@ -244,37 +218,37 @@ body {{
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
-}}
+}
 
-.control-group select:focus {{
+.control-group select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--glow);
-}}
+}
 
-.control-group select option {{
+.control-group select option {
   background: #151d28;
   color: var(--text);
-}}
+}
 
-.control-row {{
+.control-row {
   display: flex;
   gap: 10px;
-}}
+}
 
-.control-row .control-group {{
+.control-row .control-group {
   flex: 1;
-}}
+}
 
 /* ===================================================================
    Theme Presets
    =================================================================== */
-.presets {{
+.presets {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-}}
+}
 
-.preset-dot {{
+.preset-dot {
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -282,49 +256,49 @@ body {{
   border: 2px solid transparent;
   transition: var(--transition);
   position: relative;
-}}
+}
 
-.preset-dot:hover {{ transform: scale(1.12); }}
+.preset-dot:hover { transform: scale(1.12); }
 
-.preset-dot.active {{
+.preset-dot.active {
   border-color: white;
   box-shadow: 0 0 12px currentColor;
-}}
+}
 
-.preset-dot.classic {{
+.preset-dot.classic {
   background: #111;
   border: 2px solid #444;
-}}
+}
 
-.preset-dot.neon {{
+.preset-dot.neon {
   background: linear-gradient(135deg, #00ff88, #00d2ff);
-}}
+}
 
-.preset-dot.sunset {{
+.preset-dot.sunset {
   background: linear-gradient(135deg, #ff6b6b, #feca57);
-}}
+}
 
-.preset-dot.royal {{
+.preset-dot.royal {
   background: linear-gradient(135deg, #a855f7, #6366f1);
-}}
+}
 
-.preset-dot.forest {{
+.preset-dot.forest {
   background: linear-gradient(135deg, #22c55e, #059669);
-}}
+}
 
-.preset-dot.mono {{
+.preset-dot.mono {
   background: linear-gradient(135deg, #f8fafc, #94a3b8);
-}}
+}
 
 /* ===================================================================
    Dot Style Toggles
    =================================================================== */
-.toggles {{
+.toggles {
   display: flex;
   gap: 8px;
-}}
+}
 
-.toggle-btn {{
+.toggle-btn {
   flex: 1;
   padding: 8px 12px;
   border: 1px solid rgba(255,255,255,0.12);
@@ -336,26 +310,26 @@ body {{
   transition: var(--transition);
   text-align: center;
   font-family: inherit;
-}}
+}
 
-.toggle-btn:hover {{ background: rgba(255,255,255,0.06); }}
+.toggle-btn:hover { background: rgba(255,255,255,0.06); }
 
-.toggle-btn.active {{
+.toggle-btn.active {
   background: var(--accent);
   border-color: var(--accent);
   color: white;
-}}
+}
 
 /* ===================================================================
    Color Pickers
    =================================================================== */
-.color-row {{
+.color-row {
   display: flex;
   gap: 12px;
   align-items: center;
-}}
+}
 
-.color-row input[type="color"] {{
+.color-row input[type="color"] {
   width: 36px;
   height: 36px;
   border: none;
@@ -363,34 +337,34 @@ body {{
   cursor: pointer;
   background: transparent;
   padding: 0;
-}}
+}
 
-.color-row input[type="color"]::-webkit-color-swatch-wrapper {{ padding: 0; }}
+.color-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
 
-.color-row input[type="color"]::-webkit-color-swatch {{
+.color-row input[type="color"]::-webkit-color-swatch {
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.15);
-}}
+}
 
 /* ===================================================================
    QR Panel
    =================================================================== */
-.qr-panel {{
+.qr-panel {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
   min-width: 340px;
-}}
+}
 
-.qr-wrapper {{
+.qr-wrapper {
   position: relative;
   border-radius: var(--radius);
   overflow: hidden;
-}}
+}
 
-.qr-glow {{
+.qr-glow {
   position: absolute;
   inset: -4px;
   border-radius: calc(var(--radius) + 4px);
@@ -398,48 +372,48 @@ body {{
   opacity: 0.6;
   pointer-events: none;
   transition: background 0.5s;
-}}
+}
 
-canvas {{
+canvas {
   display: block;
   border-radius: var(--radius);
   position: relative;
   z-index: 1;
   max-width: 340px;
   max-height: 340px;
-}}
+}
 
-.qr-title-display {{
+.qr-title-display {
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--text);
   text-align: center;
   min-height: 1.4em;
-}}
+}
 
-.qr-subtitle-display {{
+.qr-subtitle-display {
   font-size: 0.85rem;
   color: var(--text-muted);
   text-align: center;
   min-height: 1.2em;
-}}
+}
 
-.qr-meta {{
+.qr-meta {
   font-size: 0.72rem;
   color: rgba(255,255,255,0.25);
   text-align: center;
   letter-spacing: 0.04em;
-}}
+}
 
 /* ===================================================================
    Download Button + Dropdown
    =================================================================== */
-.btn-group {{
+.btn-group {
   position: relative;
   display: inline-flex;
-}}
+}
 
-.btn {{
+.btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -452,33 +426,33 @@ canvas {{
   transition: var(--transition);
   font-family: inherit;
   white-space: nowrap;
-}}
+}
 
-.btn-primary {{
+.btn-primary {
   background: linear-gradient(135deg, var(--accent), #0284a7);
   color: white;
   border-radius: 10px 0 0 10px;
-}}
+}
 
-.btn-primary:hover {{
+.btn-primary:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 16px var(--glow);
-}}
+}
 
-.btn-dropdown {{
+.btn-dropdown {
   background: linear-gradient(135deg, var(--accent), #0284a7);
   color: white;
   border-radius: 0 10px 10px 0;
   padding: 10px 12px;
   border-left: 1px solid rgba(255,255,255,0.25);
-}}
+}
 
-.btn-dropdown:hover {{
+.btn-dropdown:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 16px var(--glow);
-}}
+}
 
-.dropdown-menu {{
+.dropdown-menu {
   position: absolute;
   top: 100%;
   right: 0;
@@ -493,11 +467,11 @@ canvas {{
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-}}
+}
 
-.dropdown-menu.open {{ display: block; }}
+.dropdown-menu.open { display: block; }
 
-.dropdown-item {{
+.dropdown-item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -512,23 +486,23 @@ canvas {{
   transition: background 0.15s;
   font-family: inherit;
   text-align: left;
-}}
+}
 
-.dropdown-item:hover {{ background: rgba(255,255,255,0.08); }}
+.dropdown-item:hover { background: rgba(255,255,255,0.08); }
 
-.dropdown-item svg {{ flex-shrink: 0; }}
+.dropdown-item svg { flex-shrink: 0; }
 
 /* ===================================================================
    Footer / GitHub
    =================================================================== */
-.footer {{
+.footer {
   position: relative;
   z-index: 1;
   padding: 20px;
   text-align: center;
-}}
+}
 
-.github-link {{
+.github-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -541,50 +515,50 @@ canvas {{
   font-size: 0.88rem;
   font-weight: 500;
   transition: var(--transition);
-}}
+}
 
-.github-link:hover {{
+.github-link:hover {
   background: rgba(255,255,255,0.08);
   color: var(--text);
   border-color: rgba(255,255,255,0.15);
   transform: translateY(-1px);
-}}
+}
 
-.github-link svg {{
+.github-link svg {
   width: 20px;
   height: 20px;
   opacity: 0.8;
-}}
+}
 
-.footer-tag {{
+.footer-tag {
   margin-top: 10px;
   font-size: 0.72rem;
   color: rgba(255,255,255,0.2);
-}}
+}
 
 /* ===================================================================
    Responsive
    =================================================================== */
-@media (max-width: 800px) {{
-  .main {{
+@media (max-width: 800px) {
+  .main {
     flex-direction: column;
     align-items: center;
-  }}
-  .controls {{
+  }
+  .controls {
     max-width: 100%;
     flex: 1 1 auto;
-  }}
-  .qr-panel {{
+  }
+  .qr-panel {
     min-width: 280px;
-  }}
-  canvas {{
+  }
+  canvas {
     max-width: 280px;
     max-height: 280px;
-  }}
-  .header h1 {{
+  }
+  .header h1 {
     font-size: 1.6rem;
-  }}
-}}
+  }
+}
 </style>
 </head>
 <body>
@@ -746,58 +720,58 @@ canvas {{
 //  QR Code Encoder — pure JS
 // =====================================================================
 
-const QR = (() => {{
+const QR = (() => {
 
   // -- GF(256) --------------------------------------------------------
   const EXP = new Int32Array(512);
   const LOG = new Int32Array(256);
-  (() => {{
+  (() => {
     let x = 1;
-    for (let i = 0; i < 255; i++) {{
+    for (let i = 0; i < 255; i++) {
       EXP[i] = x; EXP[i + 255] = x;
       LOG[x] = i;
       x <<= 1; if (x & 256) x ^= 0x11D;
-    }}
+    }
     LOG[1] = 0;
-  }})();
+  })();
 
   const gfMul = (a, b) => (a && b) ? EXP[LOG[a] + LOG[b]] : 0;
   const gfPow = (a, n) => n === 0 ? 1 : a === 0 ? 0 : EXP[(LOG[a] * n) % 255];
 
-  const polyMul = (p1, p2) => {{
+  const polyMul = (p1, p2) => {
     const out = new Int32Array(p1.length + p2.length - 1);
     for (let i = 0; i < p1.length; i++)
       for (let j = 0; j < p2.length; j++)
         out[i + j] ^= gfMul(p1[i], p2[j]);
     return out;
-  }};
+  };
 
   const RS_GEN = [];
-  const getRSGen = (nSym) => {{
-    if (!RS_GEN[nSym]) {{
+  const getRSGen = (nSym) => {
+    if (!RS_GEN[nSym]) {
       let g = new Int32Array([1]);
       for (let i = 0; i < nSym; i++)
         g = polyMul(g, new Int32Array([1, gfPow(2, i)]));
       RS_GEN[nSym] = g;
-    }}
+    }
     return RS_GEN[nSym];
-  }};
+  };
 
-  const rsEncode = (data, nSym) => {{
+  const rsEncode = (data, nSym) => {
     const gen = getRSGen(nSym);
     const res = new Int32Array(data.length + nSym);
     res.set(data);
-    for (let i = 0; i < data.length; i++) {{
+    for (let i = 0; i < data.length; i++) {
       const coef = res[i];
       if (coef) for (let j = 0; j < gen.length; j++)
         res[i + j] ^= gfMul(gen[j], coef);
-    }}
+    }
     return res.slice(data.length);
-  }};
+  };
 
   // -- Capacity tables (ISO/IEC 18004:2015) — versions 1–40 ----------
   // Each entry: [totalDataCW, ecPerBlock, g1Blocks, g1DataCW, g2Blocks, g2DataCW]
-  const CAP = {{
+  const CAP = {
     L: [
       null,
       [19,7,1,19,0,0],[34,10,1,34,0,0],[55,15,1,55,0,0],[80,20,1,80,0,0],
@@ -850,9 +824,9 @@ const QR = (() => {{
       [901,30,11,15,46,16],[961,30,59,16,1,17],[986,30,22,15,41,16],[1054,30,2,15,64,16],
       [1096,30,24,15,46,16],[1142,30,42,15,32,16],[1222,30,10,15,67,16],[1276,30,20,15,61,16],
     ],
-  }};
+  };
 
-  const ECL_MAP = {{ L: 0, M: 1, Q: 2, H: 3 }};
+  const ECL_MAP = { L: 0, M: 1, Q: 2, H: 3 };
 
   const ALIGN_POS = [
     null, null,
@@ -884,28 +858,28 @@ const QR = (() => {{
   ];
 
   // -- Bit Buffer ----------------------------------------------------
-  class BitBuf {{
-    constructor() {{
+  class BitBuf {
+    constructor() {
       this.buf = [];
       this.len = 0;
-    }}
-    put(n, bits) {{
-      for (let i = bits - 1; i >= 0; i--) {{
+    }
+    put(n, bits) {
+      for (let i = bits - 1; i >= 0; i--) {
         const bi = this.len >> 3;
         while (this.buf.length <= bi) this.buf.push(0);
         if ((n >>> i) & 1) this.buf[bi] |= 0x80 >>> (this.len & 7);
         this.len++;
-      }}
-    }}
-    padToByte() {{
+      }
+    }
+    padToByte() {
       const rem = this.len & 7;
       if (rem) this.put(0, 8 - rem);
-    }}
-    byteLen() {{ return this.buf.length; }}
-  }}
+    }
+    byteLen() { return this.buf.length; }
+  }
 
   // -- Data encoding (byte mode) -------------------------------------
-  const encodeData = (text, version, ecl) => {{
+  const encodeData = (text, version, ecl) => {
     const cap = CAP[ecl][version];
     if (!cap) return null;
     const totalData = cap[0];
@@ -927,16 +901,16 @@ const QR = (() => {{
     bb.padToByte();
 
     // Pad bytes 0xEC, 0x11
-    while (bb.byteLen() < dataCap) {{
+    while (bb.byteLen() < dataCap) {
       bb.put(0xEC, 8);
       if (bb.byteLen() < dataCap) bb.put(0x11, 8);
-    }}
+    }
 
     // Split into blocks and compute EC
     const blocks = [];
     let offset = 0;
-    for (let i = 0; i < b1; i++) {{ blocks.push(bb.buf.slice(offset, offset + c1)); offset += c1; }}
-    for (let i = 0; i < b2; i++) {{ blocks.push(bb.buf.slice(offset, offset + c2)); offset += c2; }}
+    for (let i = 0; i < b1; i++) { blocks.push(bb.buf.slice(offset, offset + c1)); offset += c1; }
+    for (let i = 0; i < b2; i++) { blocks.push(bb.buf.slice(offset, offset + c2)); offset += c2; }
 
     const ecBlocks = blocks.map(b => rsEncode(b, ecPerBlock));
 
@@ -951,26 +925,26 @@ const QR = (() => {{
     for (let i = 0; i < ecPerBlock; i++)
       for (const ec of ecBlocks) interleaved.push(ec[i]);
 
-    return {{ data: interleaved, remBits: REM[version] }};
-  }};
+    return { data: interleaved, remBits: REM[version] };
+  };
 
   // -- Matrix construction -------------------------------------------
-  const buildMatrix = (version) => {{
+  const buildMatrix = (version) => {
     const size = 17 + version * 4;
     const m = new Int32Array(size * size);
     m.fill(-1);
 
-    const placeFinder = (r, c) => {{
-      for (let dr = -1; dr <= 7; dr++) {{
-        for (let dc = -1; dc <= 7; dc++) {{
+    const placeFinder = (r, c) => {
+      for (let dr = -1; dr <= 7; dr++) {
+        for (let dc = -1; dc <= 7; dc++) {
           const rr = r + dr, cc = c + dc;
           if (rr < 0 || rr >= size || cc < 0 || cc >= size) continue;
           m[rr * size + cc] = (dr >= 0 && dr <= 6 && dc >= 0 && dc <= 6 &&
             (dr === 0 || dr === 6 || dc === 0 || dc === 6 ||
              (dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4))) ? 1 : 0;
-        }}
-      }}
-    }};
+        }
+      }
+    };
     placeFinder(0, 0);
     placeFinder(0, size - 7);
     placeFinder(size - 7, 0);
@@ -981,63 +955,63 @@ const QR = (() => {{
 
     // Alignment patterns
     const ap = ALIGN_POS[version];
-    if (ap) {{
-      for (const ar of ap) {{
-        for (const ac of ap) {{
+    if (ap) {
+      for (const ar of ap) {
+        for (const ac of ap) {
           if ((ar === 6 && ac === 6) || (ar === 6 && ac === size - 7) || (ar === size - 7 && ac === 6)) continue;
-          for (let dr = -2; dr <= 2; dr++) {{
-            for (let dc = -2; dc <= 2; dc++) {{
+          for (let dr = -2; dr <= 2; dr++) {
+            for (let dc = -2; dc <= 2; dc++) {
               const rr = ar + dr, cc = ac + dc;
               m[rr * size + cc] = (dr === -2 || dr === 2 || dc === -2 || dc === 2 || (dr === 0 && dc === 0)) ? 1 : 0;
-            }}
-          }}
-        }}
-      }}
-    }}
+            }
+          }
+        }
+      }
+    }
 
     // Dark module
     m[(size - 8) * size + 8] = 1;
     return m;
-  }};
+  };
 
   // -- Place data bits ------------------------------------------------
-  const placeData = (matrix, data) => {{
+  const placeData = (matrix, data) => {
     const size = Math.floor(Math.sqrt(matrix.length));
     let c = size - 1, r = size - 1;
     let dir = -1;
     let bitIdx = 0;
 
-    while (c > 0) {{
+    while (c > 0) {
       if (c === 6) c = 5;
-      for (let i = 0; i < size; i++) {{
+      for (let i = 0; i < size; i++) {
         const rr = dir < 0 ? size - 1 - i : i;
-        for (const cc of [c, c - 1]) {{
-          if (bitIdx < data.length * 8) {{
+        for (const cc of [c, c - 1]) {
+          if (bitIdx < data.length * 8) {
             const byte = data[bitIdx >> 3];
             const bit = (byte >>> (7 - (bitIdx & 7))) & 1;
             if (rr >= 0 && rr < size && cc >= 0 && cc < size && matrix[rr * size + cc] === -1)
               matrix[rr * size + cc] = bit;
             bitIdx++;
-          }}
-        }}
-      }}
+          }
+        }
+      }
       c -= 2;
       dir = -dir;
-    }}
+    }
 
     for (let i = 0; i < matrix.length; i++)
       if (matrix[i] === -1) matrix[i] = 0;
-  }};
+  };
 
   // -- Format info --------------------------------------------------
-  const fmtInfo = (ecl, mask) => {{
+  const fmtInfo = (ecl, mask) => {
     const fi = FORMAT_INFO[ECL_MAP[ecl] * 8 + mask];
     const bits = [];
     for (let i = 0; i < 15; i++) bits.push((fi >> i) & 1);
     return bits;
-  }};
+  };
 
-  const isFunctional = (r, c, size) => {{
+  const isFunctional = (r, c, size) => {
     if (r <= 8 && c <= 8) return true;
     if (r <= 8 && c >= size - 8) return true;
     if (r >= size - 8 && c <= 8) return true;
@@ -1047,9 +1021,9 @@ const QR = (() => {{
     if (r === 8 && c >= size - 8) return true;
     if (r >= size - 8 && c === 8) return true;
     return false;
-  }};
+  };
 
-  const applyFormat = (matrix, ecl, mask) => {{
+  const applyFormat = (matrix, ecl, mask) => {
     const size = Math.floor(Math.sqrt(matrix.length));
     const bits = fmtInfo(ecl, mask);
     for (let i = 0; i <= 5; i++) matrix[i * size + 8] = bits[i];
@@ -1060,10 +1034,10 @@ const QR = (() => {{
     for (let i = 0; i <= 7; i++) matrix[8 * size + (size - 1 - i)] = bits[i];
     for (let i = 0; i <= 7; i++) matrix[(size - 1 - i) * size + 8] = bits[i];
     matrix[size * 8] = 1;
-  }};
+  };
 
   // -- Version info (v7+) --------------------------------------------
-  const applyVersion = (matrix, version) => {{
+  const applyVersion = (matrix, version) => {
     if (version < 7) return;
     const size = Math.floor(Math.sqrt(matrix.length));
     const V = [
@@ -1077,14 +1051,14 @@ const QR = (() => {{
       0x2542E, 0x26A64, 0x27541, 0x28C69,
     ];
     const bits = V[version];
-    for (let i = 0; i < 18; i++) {{
+    for (let i = 0; i < 18; i++) {
       const bit = (bits >>> i) & 1;
       const rr = Math.floor(i / 3);
       const cc = (size - 11) + (i % 3);
       matrix[rr * size + cc] = bit;
       matrix[cc * size + rr] = bit;
-    }}
-  }};
+    }
+  };
 
   // -- Mask patterns -------------------------------------------------
   const MASK_FNS = [
@@ -1099,27 +1073,27 @@ const QR = (() => {{
   ];
 
   // -- Penalty scoring -----------------------------------------------
-  const scoreMatrix = (matrix) => {{
+  const scoreMatrix = (matrix) => {
     const size = Math.floor(Math.sqrt(matrix.length));
     let score = 0;
 
     // Rule 1: consecutive runs
-    for (let r = 0; r < size; r++) {{
+    for (let r = 0; r < size; r++) {
       let run = 1;
-      for (let c = 1; c < size; c++) {{
+      for (let c = 1; c < size; c++) {
         if (matrix[r * size + c] === matrix[r * size + c - 1]) run++;
-        else {{ if (run >= 5) score += run - 2; run = 1; }}
-      }}
+        else { if (run >= 5) score += run - 2; run = 1; }
+      }
       if (run >= 5) score += run - 2;
-    }}
-    for (let c = 0; c < size; c++) {{
+    }
+    for (let c = 0; c < size; c++) {
       let run = 1;
-      for (let r = 1; r < size; r++) {{
+      for (let r = 1; r < size; r++) {
         if (matrix[r * size + c] === matrix[(r - 1) * size + c]) run++;
-        else {{ if (run >= 5) score += run - 2; run = 1; }}
-      }}
+        else { if (run >= 5) score += run - 2; run = 1; }
+      }
       if (run >= 5) score += run - 2;
-    }}
+    }
 
     // Rule 2: 2x2 blocks
     for (let r = 0; r < size - 1; r++)
@@ -1132,26 +1106,26 @@ const QR = (() => {{
     // Rule 3: finder-like patterns
     const p1 = [1,0,1,1,1,0,1,0,0,0,0];
     const p2 = [0,0,0,0,1,0,1,1,1,0,1];
-    for (let r = 0; r < size; r++) {{
-      for (let c = 0; c < size - 10; c++) {{
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size - 10; c++) {
         let m1 = true, m2 = true;
-        for (let k = 0; k < 11; k++) {{
+        for (let k = 0; k < 11; k++) {
           if (matrix[r * size + c + k] !== p1[k]) m1 = false;
           if (matrix[r * size + c + k] !== p2[k]) m2 = false;
-        }}
+        }
         if (m1 || m2) score += 40;
-      }}
-    }}
-    for (let c = 0; c < size; c++) {{
-      for (let r = 0; r < size - 10; r++) {{
+      }
+    }
+    for (let c = 0; c < size; c++) {
+      for (let r = 0; r < size - 10; r++) {
         let m1 = true, m2 = true;
-        for (let k = 0; k < 11; k++) {{
+        for (let k = 0; k < 11; k++) {
           if (matrix[(r + k) * size + c] !== p1[k]) m1 = false;
           if (matrix[(r + k) * size + c] !== p2[k]) m2 = false;
-        }}
+        }
         if (m1 || m2) score += 40;
-      }}
-    }}
+      }
+    }
 
     // Rule 4: dark/light ratio
     let dark = 0;
@@ -1161,13 +1135,13 @@ const QR = (() => {{
     score += Math.min(Math.abs(prev - 50) / 5, Math.abs(prev + 5 - 50) / 5) * 10;
 
     return score;
-  }};
+  };
 
   // -- Choose + apply mask -------------------------------------------
-  const chooseMask = (matrix, ecl, version, forceMask) => {{
+  const chooseMask = (matrix, ecl, version, forceMask) => {
     const size = Math.floor(Math.sqrt(matrix.length));
 
-    if (forceMask >= 0) {{
+    if (forceMask >= 0) {
       const fn = MASK_FNS[forceMask];
       for (let r = 0; r < size; r++)
         for (let c = 0; c < size; c++)
@@ -1176,11 +1150,11 @@ const QR = (() => {{
       applyFormat(matrix, ecl, forceMask);
       applyVersion(matrix, version);
       return forceMask;
-    }}
+    }
 
     let bestMask = 0, bestScore = Infinity;
 
-    for (let m = 0; m < 8; m++) {{
+    for (let m = 0; m < 8; m++) {
       const test = new Int32Array(matrix);
       const fn = MASK_FNS[m];
       for (let r = 0; r < size; r++)
@@ -1188,8 +1162,8 @@ const QR = (() => {{
           if (!isFunctional(r, c, size) && test[r * size + c] >= 0)
             test[r * size + c] ^= fn(r, c) ? 1 : 0;
       const s = scoreMatrix(test);
-      if (s < bestScore) {{ bestScore = s; bestMask = m; }}
-    }}
+      if (s < bestScore) { bestScore = s; bestMask = m; }
+    }
 
     // Apply best mask
     const fn = MASK_FNS[bestMask];
@@ -1201,23 +1175,23 @@ const QR = (() => {{
     applyFormat(matrix, ecl, bestMask);
     applyVersion(matrix, version);
     return bestMask;
-  }};
+  };
 
   // -- Version selection ----------------------------------------------
-  const chooseVersion = (text, ecl, versionMin) => {{
+  const chooseVersion = (text, ecl, versionMin) => {
     const len = new TextEncoder().encode(text).length;
     const capTable = CAP[ecl];
-    for (let v = versionMin; v <= 40; v++) {{
+    for (let v = versionMin; v <= 40; v++) {
       const cap = capTable[v];
       if (!cap) continue;
       const dataCap = cap[0] - cap[1] * (cap[2] + cap[4]);
       if (len <= dataCap) return v;
-    }}
+    }
     return null;
-  }};
+  };
 
   // -- Public API -----------------------------------------------------
-  const encode = (text, ecl, versionMin, mask) => {{
+  const encode = (text, ecl, versionMin, mask) => {
     if (!text) return null;
     const version = chooseVersion(text, ecl, versionMin);
     if (!version) return null;
@@ -1230,17 +1204,17 @@ const QR = (() => {{
     placeData(matrix, encoded.data);
     const actualMask = chooseMask(matrix, ecl, version, mask);
 
-    return {{ matrix: Array.from(matrix), side: size, version, ecl, mask: actualMask }};
-  }};
+    return { matrix: Array.from(matrix), side: size, version, ecl, mask: actualMask };
+  };
 
-  return {{ encode, ECL_MAP }};
-}})();
+  return { encode, ECL_MAP };
+})();
 
 // =====================================================================
 //  State
 // =====================================================================
 
-const state = {{
+const state = {
   theme: 'classic',
   dotStyle: 'square',
   customFg: '#000000',
@@ -1249,38 +1223,38 @@ const state = {{
   versionMin: 1,
   maskMode: -1,
   data: null,
-}};
+};
 
-const INITIAL_TEXT = {text_json};
-const INITIAL_DATA = {{ matrix: {matrix_json}, side: {side}, version: (({side} - 21) / 4 + 1), ecl: 'M', mask: 0 }};
+const INITIAL_TEXT = "molcrafts";
+const INITIAL_DATA = { matrix: [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0], side: 21, version: ((21 - 21) / 4 + 1), ecl: 'M', mask: 0 };
 state.data = INITIAL_DATA;
 
 // =====================================================================
 //  Theme helpers
 // =====================================================================
 
-const THEMES = {{
-  classic:  {{ fg: null,   bg: null,    glow: 'transparent' }},
-  neon:     {{ fg: '#00ff88', bg: '#0d1117', glow: 'rgba(0,255,136,0.4)' }},
-  sunset:   {{ fg: '#ff6b6b', bg: '#1a1a2e', glow: 'rgba(255,107,107,0.35)' }},
-  royal:    {{ fg: '#a855f7', bg: '#0f0a1a', glow: 'rgba(168,85,247,0.4)' }},
-  forest:   {{ fg: '#22c55e', bg: '#0a1a0f', glow: 'rgba(34,197,94,0.35)' }},
-  mono:     {{ fg: '#1e293b', bg: '#f8fafc', glow: 'rgba(148,163,184,0.3)' }},
-}};
+const THEMES = {
+  classic:  { fg: null,   bg: null,    glow: 'transparent' },
+  neon:     { fg: '#00ff88', bg: '#0d1117', glow: 'rgba(0,255,136,0.4)' },
+  sunset:   { fg: '#ff6b6b', bg: '#1a1a2e', glow: 'rgba(255,107,107,0.35)' },
+  royal:    { fg: '#a855f7', bg: '#0f0a1a', glow: 'rgba(168,85,247,0.4)' },
+  forest:   { fg: '#22c55e', bg: '#0a1a0f', glow: 'rgba(34,197,94,0.35)' },
+  mono:     { fg: '#1e293b', bg: '#f8fafc', glow: 'rgba(148,163,184,0.3)' },
+};
 
-function getFg() {{
+function getFg() {
   const t = THEMES[state.theme];
   return t.fg !== null ? t.fg : state.customFg;
-}}
+}
 
-function getBg() {{
+function getBg() {
   const t = THEMES[state.theme];
   return t.bg !== null ? t.bg : state.customBg;
-}}
+}
 
-function getGlow() {{
+function getGlow() {
   return THEMES[state.theme].glow;
-}}
+}
 
 // =====================================================================
 //  Render
@@ -1290,14 +1264,14 @@ const canvas = document.getElementById('qr-canvas');
 const ctx = canvas.getContext('2d');
 const glowEl = document.getElementById('qr-glow');
 
-function draw() {{
+function draw() {
   const data = state.data;
   const fg = getFg();
   const bg = getBg();
 
   glowEl.style.background = getGlow();
 
-  if (!data) {{
+  if (!data) {
     const s = 300;
     canvas.width = s; canvas.height = s;
     ctx.fillStyle = bg;
@@ -1307,7 +1281,7 @@ function draw() {{
     ctx.textAlign = 'center';
     ctx.fillText('Type something to generate', s / 2, s / 2);
     return;
-  }}
+  }
 
   const quiet = 4;
   const total = data.side + 2 * quiet;
@@ -1322,19 +1296,19 @@ function draw() {{
   ctx.fillStyle = fg;
   const ds = state.dotStyle;
 
-  for (let r = 0; r < data.side; r++) {{
-    for (let c = 0; c < data.side; c++) {{
+  for (let r = 0; r < data.side; r++) {
+    for (let c = 0; c < data.side; c++) {
       if (!data.matrix[r * data.side + c]) continue;
       const x = (quiet + c) * scale;
       const y = (quiet + r) * scale;
 
-      if (ds === 'square') {{
+      if (ds === 'square') {
         ctx.fillRect(x, y, scale, scale);
-      }} else if (ds === 'circle') {{
+      } else if (ds === 'circle') {
         ctx.beginPath();
         ctx.arc(x + scale / 2, y + scale / 2, scale * 0.48, 0, Math.PI * 2);
         ctx.fill();
-      }} else {{
+      } else {
         const rr = scale * 0.3;
         ctx.beginPath();
         ctx.moveTo(x + rr, y);
@@ -1348,10 +1322,10 @@ function draw() {{
         ctx.quadraticCurveTo(x, y, x + rr, y);
         ctx.closePath();
         ctx.fill();
-      }}
-    }}
-  }}
-}}
+      }
+    }
+  }
+}
 
 // =====================================================================
 //  App logic
@@ -1370,97 +1344,97 @@ const maskSelect = document.getElementById('mask-select');
 
 textInput.value = INITIAL_TEXT;
 
-function refresh() {{
+function refresh() {
   const text = textInput.value.trim();
-  if (text) {{
+  if (text) {
     const result = QR.encode(text, state.ecl, state.versionMin, state.maskMode);
-    if (result) {{
+    if (result) {
       state.data = result;
-    }}
-  }} else {{
+    }
+  } else {
     state.data = INITIAL_DATA;
-  }}
+  }
   draw();
 
   qrTitleEl.textContent = titleInput.value.trim();
   qrSubtitleEl.textContent = subtitleInput.value.trim();
 
   const d = state.data;
-  if (d && d.version) {{
+  if (d && d.version) {
     const maskLabel = d.mask >= 0 ? ('Mask ' + d.mask) : 'Auto';
     qrMetaEl.textContent = 'v' + d.version + ' · ' + d.ecl + ' · ' + maskLabel;
-  }} else {{
+  } else {
     qrMetaEl.textContent = '';
-  }}
-}}
+  }
+}
 
 // Debounced text input
 let debounce;
-textInput.addEventListener('input', () => {{
+textInput.addEventListener('input', () => {
   clearTimeout(debounce);
   debounce = setTimeout(refresh, 120);
-}});
+});
 titleInput.addEventListener('input', refresh);
 subtitleInput.addEventListener('input', refresh);
 
 // ECL toggles
-document.querySelectorAll('#ecl-toggles .toggle-btn').forEach(btn => {{
-  btn.addEventListener('click', () => {{
+document.querySelectorAll('#ecl-toggles .toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
     document.querySelectorAll('#ecl-toggles .toggle-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.ecl = btn.dataset.ecl;
     refresh();
-  }});
-}});
+  });
+});
 
 // Version min
-versionMinInput.addEventListener('input', () => {{
+versionMinInput.addEventListener('input', () => {
   const v = parseInt(versionMinInput.value, 10);
   state.versionMin = (v >= 1 && v <= 40) ? v : 1;
   refresh();
-}});
+});
 
 // Mask select
-maskSelect.addEventListener('change', () => {{
+maskSelect.addEventListener('change', () => {
   state.maskMode = parseInt(maskSelect.value, 10);
   refresh();
-}});
+});
 
 // Theme presets
-document.querySelectorAll('#theme-presets .preset-dot').forEach(btn => {{
-  btn.addEventListener('click', () => {{
+document.querySelectorAll('#theme-presets .preset-dot').forEach(btn => {
+  btn.addEventListener('click', () => {
     document.querySelectorAll('#theme-presets .preset-dot').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.theme = btn.dataset.theme;
     draw();
-  }});
-}});
+  });
+});
 
 // Dot style toggles
-document.querySelectorAll('#dot-toggles .toggle-btn').forEach(btn => {{
-  btn.addEventListener('click', () => {{
+document.querySelectorAll('#dot-toggles .toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
     document.querySelectorAll('#dot-toggles .toggle-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.dotStyle = btn.dataset.dot;
     draw();
-  }});
-}});
+  });
+});
 
 // Custom colours
-fgColor.addEventListener('input', () => {{
+fgColor.addEventListener('input', () => {
   state.customFg = fgColor.value;
   state.theme = 'classic';
   document.querySelectorAll('#theme-presets .preset-dot').forEach(b => b.classList.remove('active'));
   document.querySelector('#theme-presets .preset-dot.classic').classList.add('active');
   draw();
-}});
-bgColor.addEventListener('input', () => {{
+});
+bgColor.addEventListener('input', () => {
   state.customBg = bgColor.value;
   state.theme = 'classic';
   document.querySelectorAll('#theme-presets .preset-dot').forEach(b => b.classList.remove('active'));
   document.querySelector('#theme-presets .preset-dot.classic').classList.add('active');
   draw();
-}});
+});
 
 // =====================================================================
 //  Download
@@ -1470,35 +1444,35 @@ const btnDownload = document.getElementById('btn-download');
 const btnDropdown = document.getElementById('btn-dropdown-toggle');
 const dropdownMenu = document.getElementById('dropdown-menu');
 
-btnDropdown.addEventListener('click', (e) => {{
+btnDropdown.addEventListener('click', (e) => {
   e.stopPropagation();
   dropdownMenu.classList.toggle('open');
-}});
+});
 
-document.addEventListener('click', () => {{
+document.addEventListener('click', () => {
   dropdownMenu.classList.remove('open');
-}});
+});
 
-document.querySelectorAll('.dropdown-item').forEach(item => {{
-  item.addEventListener('click', (e) => {{
+document.querySelectorAll('.dropdown-item').forEach(item => {
+  item.addEventListener('click', (e) => {
     e.stopPropagation();
     dropdownMenu.classList.remove('open');
     const fmt = item.dataset.fmt;
     if (fmt === 'png') downloadPNG();
     else downloadSVG();
-  }});
-}});
+  });
+});
 
 btnDownload.addEventListener('click', () => downloadPNG());
 
-function downloadPNG() {{
+function downloadPNG() {
   const link = document.createElement('a');
   link.download = 'molqrc.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
-}}
+}
 
-function downloadSVG() {{
+function downloadSVG() {
   if (!state.data) return;
   const quiet = 4;
   const total = state.data.side + 2 * quiet;
@@ -1510,50 +1484,36 @@ function downloadSVG() {{
   const m = state.data.matrix;
   const side = state.data.side;
 
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${{size}}" height="${{size}}" viewBox="0 0 ${{size}} ${{size}}">`;
-  svg += `<rect width="${{size}}" height="${{size}}" fill="${{bg}}"/>`;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+  svg += `<rect width="${size}" height="${size}" fill="${bg}"/>`;
 
-  for (let r = 0; r < side; r++) {{
-    for (let c = 0; c < side; c++) {{
+  for (let r = 0; r < side; r++) {
+    for (let c = 0; c < side; c++) {
       if (!m[r * side + c]) continue;
       const x = (quiet + c) * scale;
       const y = (quiet + r) * scale;
-      if (ds === 'circle') {{
-        svg += `<circle cx="${{x + scale / 2}}" cy="${{y + scale / 2}}" r="${{scale * 0.48}}" fill="${{fg}}"/>`;
-      }} else if (ds === 'rounded') {{
-        svg += `<rect x="${{x}}" y="${{y}}" width="${{scale}}" height="${{scale}}" rx="${{scale * 0.3}}" fill="${{fg}}"/>`;
-      }} else {{
-        svg += `<rect x="${{x}}" y="${{y}}" width="${{scale}}" height="${{scale}}" fill="${{fg}}"/>`;
-      }}
-    }}
-  }}
+      if (ds === 'circle') {
+        svg += `<circle cx="${x + scale / 2}" cy="${y + scale / 2}" r="${scale * 0.48}" fill="${fg}"/>`;
+      } else if (ds === 'rounded') {
+        svg += `<rect x="${x}" y="${y}" width="${scale}" height="${scale}" rx="${scale * 0.3}" fill="${fg}"/>`;
+      } else {
+        svg += `<rect x="${x}" y="${y}" width="${scale}" height="${scale}" fill="${fg}"/>`;
+      }
+    }
+  }
   svg += '</svg>';
 
-  const blob = new Blob([svg], {{ type: 'image/svg+xml' }});
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.download = 'molqrc.svg';
   link.href = url;
   link.click();
   URL.revokeObjectURL(url);
-}}
+}
 
 // Initial draw
 draw();
 </script>
 </body>
-</html>"""
-
-    filepath = os.path.join(dir_path, "index.html")
-    with open(filepath, "w", encoding="utf-8") as f:
-        f.write(html)
-
-
-def _escape(s):
-    return (
-        str(s)
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
-    )
+</html>
