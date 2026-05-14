@@ -1,10 +1,10 @@
-"""Reliable QR Code export — zero-dependency file output.
+"""QR Code export — file output.
 
-Generates standard image formats from QR module matrices.  Every
+Generates standard image formats from QR module matrices. Every
 exporter preserves quiet zone, square aspect ratio, and the original
 matrix content unchanged.
 
-Currently supports SVG (vector, zero-dependency).  Additional backends
+Currently supports SVG (vector format). Additional backends
 can be added without touching the encoder.
 """
 
@@ -14,9 +14,9 @@ import os
 def to_svg(matrix, side, path, *, scale=10, dark="#000", light="#fff"):
     """Write the QR Code as an SVG image file.
 
-    Pure Python — no external libraries.  Each module becomes a
-    ``<rect>`` element.  The output is a clean, minimal SVG that
-    scales perfectly and is decodable by standard QR scanners.
+    Each module becomes a ``<rect>`` element.  The output is a clean,
+    minimal SVG that scales perfectly and is decodable by standard QR
+    scanners.
 
     Args:
         matrix: ``bytearray`` of ``side * side`` bytes (0=white, 1=black).

@@ -23,9 +23,8 @@ mol_project:
 
 ## What this repo is
 
-`molqrc` is a zero-dependency C library for QR Code generation (Version 1–40),
-with Python ctypes bindings. Encodes text → QR Code module matrix, renders
-via caller-provided draw callback.
+`molqrc` generates QR Codes (Version 1–40) from text, producing module matrices
+that can be exported to SVG, PNG, terminal preview, or an interactive web page.
 
 ## Where things live
 
@@ -47,7 +46,6 @@ For non-trivial work, prefer:
 ## What must never change casually
 
 - Public C API in `include/molqrc.h`
-- Zero-dependency constraint — no third-party libs
 - QR Code matrix output format (`0` = white, `1` = black, row-major)
 
 <!-- mol-agent:bootstrap:managed end -->

@@ -1,6 +1,6 @@
 # molqrc
 
-Zero-dependency QR Code generator — C library + Python CLI.
+QR Code generator — Python CLI and API.
 
 Version 1–40, all four ECL levels (L/M/Q/H), Reed-Solomon error correction,
 mask selection, automatic encoding mode detection (Numeric / Alphanumeric / Byte).
@@ -8,16 +8,13 @@ mask selection, automatic encoding mode detection (Numeric / Alphanumeric / Byte
 ## Quick start
 
 ```bash
-# Build the C library
-cmake -B build && cmake --build build
-
-# Install Python package
+# Build and install
 pip install -e .
 
 # Terminal preview
 molqrc preview "hello world"
 
-# Save as SVG (zero-dependency)
+# Save as SVG
 molqrc pic "hello world" -o qr.svg
 
 # Save as PNG (needs Pillow)
@@ -38,12 +35,12 @@ molqrc web build "Your Text" -o dist/
 npx wrangler pages deploy dist/
 
 # Option B: connect GitHub repo → Cloudflare Pages dashboard
-#   Build command: pip install -e . && cmake -B build && cmake --build build && molqrc web build "Text" -o dist/
+#   Build command: pip install -e . && molqrc web build "Text" -o dist/
 #   Publish directory: dist/
 ```
 
-The generated page is a single self-contained `index.html` — zero external dependencies,
-deployable to any static host (Cloudflare Pages, Netlify, GitHub Pages, etc.).
+The generated page is a single self-contained `index.html` — deployable to
+any static host (Cloudflare Pages, Netlify, GitHub Pages, etc.).
 
 ## Python API
 
@@ -67,7 +64,7 @@ qr = QRCode("hello",
 )
 
 # Export
-qr.save("qr.svg")         # SVG (zero-dependency)
+qr.save("qr.svg")         # SVG
 qr.save("qr.png")         # PNG (needs Pillow)
 
 # Terminal preview (best-effort)
@@ -126,16 +123,15 @@ molqrc_draw_matrix(matrix, side, 0, 0, 400, 400, draw, NULL);
 
 ## Requirements
 
-- **C**: C99 compiler, CMake 3.14+
-- **Python**: 3.9+
-- **Optional**: Pillow (for PNG output)
+- Python: 3.9+
+- Optional: Pillow (for PNG output)
 
 ## Project structure
 
 ```
-src/          C library (matrix, encoding, Reed-Solomon, segments)
+src/          QR encoding (matrix, Reed-Solomon, segments)
 include/      Public header (molqrc.h)
-bindings/     Python ctypes bindings + CLI
+bindings/     Python bindings + CLI
 tests/        C tests (ctest) + Python tests (pytest)
 ```
 

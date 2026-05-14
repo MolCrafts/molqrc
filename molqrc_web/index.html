@@ -143,7 +143,7 @@ body {
   width: 100%;
   flex-wrap: wrap;
   justify-content: center;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 /* ===================================================================
@@ -344,6 +344,63 @@ body {
 .color-row input[type="color"]::-webkit-color-swatch {
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* ===================================================================
+   Advanced Section (collapsible)
+   =================================================================== */
+.advanced {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.advanced summary {
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition);
+}
+
+.advanced summary::-webkit-details-marker { display: none; }
+
+.advanced summary::before {
+  content: '+';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+
+.advanced[open] summary::before {
+  content: '\2212';
+}
+
+.advanced summary:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.02);
+}
+
+.advanced-body {
+  padding: 0 14px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 /* ===================================================================
@@ -609,37 +666,6 @@ canvas {
       </div>
 
       <div class="control-group">
-        <label>Error Correction (ECL)</label>
-        <div class="toggles" id="ecl-toggles">
-          <button class="toggle-btn" data-ecl="L" title="~7% recovery">L</button>
-          <button class="toggle-btn active" data-ecl="M" title="~15% recovery">M</button>
-          <button class="toggle-btn" data-ecl="Q" title="~25% recovery">Q</button>
-          <button class="toggle-btn" data-ecl="H" title="~30% recovery">H</button>
-        </div>
-      </div>
-
-      <div class="control-row">
-        <div class="control-group">
-          <label for="version-min">Min Version</label>
-          <input type="number" id="version-min" min="1" max="40" value="1">
-        </div>
-        <div class="control-group">
-          <label for="mask-select">Mask</label>
-          <select id="mask-select">
-            <option value="-1">Auto</option>
-            <option value="0">0 — (row+col) % 2</option>
-            <option value="1">1 — row % 2</option>
-            <option value="2">2 — col % 3</option>
-            <option value="3">3 — (row+col) % 3</option>
-            <option value="4">4 — (row/2+col/3) % 2</option>
-            <option value="5">5 — (row*col) % 2+3</option>
-            <option value="6">6 — (row*col) % 2+3 & 1</option>
-            <option value="7">7 — (row+col+row*col) % 2+3 & 1</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="control-group">
         <label>Theme</label>
         <div class="presets" id="theme-presets">
           <button class="preset-dot classic active" data-theme="classic" title="Classic"></button>
@@ -669,6 +695,42 @@ canvas {
           <input type="color" id="bg-color" value="#ffffff">
         </div>
       </div>
+
+      <details class="advanced" id="advanced-section">
+        <summary>Advanced</summary>
+        <div class="advanced-body">
+          <div class="control-group">
+            <label>Error Correction (ECL)</label>
+            <div class="toggles" id="ecl-toggles">
+              <button class="toggle-btn" data-ecl="L" title="~7% recovery">L</button>
+              <button class="toggle-btn active" data-ecl="M" title="~15% recovery">M</button>
+              <button class="toggle-btn" data-ecl="Q" title="~25% recovery">Q</button>
+              <button class="toggle-btn" data-ecl="H" title="~30% recovery">H</button>
+            </div>
+          </div>
+
+          <div class="control-row">
+            <div class="control-group">
+              <label for="version-min">Min Version</label>
+              <input type="number" id="version-min" min="1" max="40" value="1">
+            </div>
+            <div class="control-group">
+              <label for="mask-select">Mask</label>
+              <select id="mask-select">
+                <option value="-1">Auto</option>
+                <option value="0">0 — (row+col) % 2</option>
+                <option value="1">1 — row % 2</option>
+                <option value="2">2 — col % 3</option>
+                <option value="3">3 — (row+col) % 3</option>
+                <option value="4">4 — (row/2+col/3) % 2</option>
+                <option value="5">5 — (row*col) % 2+3</option>
+                <option value="6">6 — (row*col) % 2+3 & 1</option>
+                <option value="7">7 — (row+col+row*col) % 2+3 & 1</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </details>
     </div>
 
     <!-- QR Display -->
@@ -717,7 +779,7 @@ canvas {
 
 <script>
 // =====================================================================
-//  QR Code Encoder — pure JS
+//  QR Code Encoder
 // =====================================================================
 
 const QR = (() => {
@@ -735,38 +797,51 @@ const QR = (() => {
     LOG[1] = 0;
   })();
 
-  const gfMul = (a, b) => (a && b) ? EXP[LOG[a] + LOG[b]] : 0;
+  // Nayuki-style GF multiply (Russian peasant multiplication)
+  const gfMul = (x, y) => {
+    let z = 0;
+    for (let i = 7; i >= 0; i--) {
+      z = (z << 1) ^ ((z >> 7) * 0x11D);
+      z ^= ((y >> i) & 1) * x;
+    }
+    return z & 0xFF;
+  };
   const gfPow = (a, n) => n === 0 ? 1 : a === 0 ? 0 : EXP[(LOG[a] * n) % 255];
 
-  const polyMul = (p1, p2) => {
-    const out = new Int32Array(p1.length + p2.length - 1);
-    for (let i = 0; i < p1.length; i++)
-      for (let j = 0; j < p2.length; j++)
-        out[i + j] ^= gfMul(p1[i], p2[j]);
-    return out;
-  };
-
   const RS_GEN = [];
-  const getRSGen = (nSym) => {
-    if (!RS_GEN[nSym]) {
-      let g = new Int32Array([1]);
-      for (let i = 0; i < nSym; i++)
-        g = polyMul(g, new Int32Array([1, gfPow(2, i)]));
-      RS_GEN[nSym] = g;
+  // Nayuki: generate RS divisor (coefficients highest to lowest, excluding leading 1)
+  const getRSGen = (degree) => {
+    if (!RS_GEN[degree]) {
+      const result = new Int32Array(degree);
+      result[degree - 1] = 1;
+      let root = 1;
+      for (let i = 0; i < degree; i++) {
+        for (let j = 0; j < degree; j++) {
+          result[j] = gfMul(result[j], root);
+          if (j + 1 < degree) result[j] ^= result[j + 1];
+        }
+        root = gfMul(root, 2);
+      }
+      RS_GEN[degree] = result;
     }
-    return RS_GEN[nSym];
+    return RS_GEN[degree];
   };
 
+  // Nayuki: compute RS remainder
   const rsEncode = (data, nSym) => {
     const gen = getRSGen(nSym);
-    const res = new Int32Array(data.length + nSym);
-    res.set(data);
+    const remainder = new Int32Array(nSym);
     for (let i = 0; i < data.length; i++) {
-      const coef = res[i];
-      if (coef) for (let j = 0; j < gen.length; j++)
-        res[i + j] ^= gfMul(gen[j], coef);
+      const factor = data[i] ^ remainder[0];
+      for (let j = 0; j < nSym - 1; j++)
+        remainder[j] = remainder[j + 1];
+      remainder[nSym - 1] = 0;
+      if (factor) {
+        for (let j = 0; j < nSym; j++)
+          remainder[j] ^= gfMul(gen[j], factor);
+      }
     }
-    return res.slice(data.length);
+    return remainder;
   };
 
   // -- Capacity tables (ISO/IEC 18004:2015) — versions 1–40 ----------
@@ -849,13 +924,18 @@ const QR = (() => {
 
   const REM = [null,0,7,7,7,7,7,0,0,0,0,0,0,0,3,3,3,3,3,3,3,4,4,4,4,4,4,4,3,3,3,3,3,3,3,0,0,0,0,0,0];
 
-  // -- Format info (from molqrc C library: LSB = bit 0 at row 0 col 8)
-  const FORMAT_INFO = [
-    0x5412, 0x5125, 0x5E7C, 0x5B4B, 0x45F9, 0x40CE, 0x4F97, 0x4AA0, // L
-    0x77C4, 0x72F3, 0x7DAA, 0x789D, 0x662F, 0x6318, 0x6C41, 0x6976, // M
-    0x1689, 0x13BE, 0x1CE7, 0x19D0, 0x0762, 0x0255, 0x0D0C, 0x083B, // Q
-    0x355F, 0x3068, 0x3F31, 0x3A06, 0x24B4, 0x2183, 0x2EDA, 0x2BED, // H
-  ];
+  // -- Format info (Nayuki: dynamic BCH computation) ------------------
+  const fmtInfo = (ecl, mask) => {
+    const eccTable = [1, 0, 3, 2];  // ECL remapping for format info
+    let data = (eccTable[ECL_MAP[ecl]] << 3) | (mask & 7);
+    let rem = data;
+    for (let i = 0; i < 10; i++)
+      rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+    const fi = ((data << 10) | rem) ^ 0x5412;
+    const bits = [];
+    for (let i = 0; i < 15; i++) bits.push((fi >>> i) & 1);
+    return bits;
+  };
 
   // -- Bit Buffer ----------------------------------------------------
   class BitBuf {
@@ -885,7 +965,7 @@ const QR = (() => {
     const totalData = cap[0];
     const ecPerBlock = cap[1];
     const b1 = cap[2], c1 = cap[3], b2 = cap[4], c2 = cap[5];
-    const dataCap = totalData - ecPerBlock * (b1 + b2);
+    const dataCap = totalData;
 
     const bytes = new TextEncoder().encode(text);
     if (bytes.length > dataCap) return null;
@@ -969,6 +1049,16 @@ const QR = (() => {
       }
     }
 
+    // Version info areas (v7+)
+    if (version >= 7) {
+      for (let i = 0; i < 6; i++) {
+        for (let j = 0; j < 3; j++) {
+          m[(size - 11 + j) * size + i] = 0;
+          m[i * size + (size - 11 + j)] = 0;
+        }
+      }
+    }
+
     // Dark module
     m[(size - 8) * size + 8] = 1;
     return m;
@@ -977,38 +1067,28 @@ const QR = (() => {
   // -- Place data bits ------------------------------------------------
   const placeData = (matrix, data) => {
     const size = Math.floor(Math.sqrt(matrix.length));
-    let c = size - 1, r = size - 1;
-    let dir = -1;
+    const version = (size - 17) / 4;
     let bitIdx = 0;
-
-    while (c > 0) {
-      if (c === 6) c = 5;
-      for (let i = 0; i < size; i++) {
-        const rr = dir < 0 ? size - 1 - i : i;
-        for (const cc of [c, c - 1]) {
+    for (let right = size - 1; right >= 1; right -= 2) {  // Nayuki-style
+      if (right === 6) right = 5;
+      const upward = ((right + 1) & 2) === 0;
+      for (let vert = 0; vert < size; vert++) {
+        const y = upward ? size - 1 - vert : vert;
+        for (let j = 0; j < 2; j++) {
+          const x = right - j;
           if (bitIdx < data.length * 8) {
             const byte = data[bitIdx >> 3];
             const bit = (byte >>> (7 - (bitIdx & 7))) & 1;
-            if (rr >= 0 && rr < size && cc >= 0 && cc < size && matrix[rr * size + cc] === -1)
-              matrix[rr * size + cc] = bit;
-            bitIdx++;
+            if (matrix[y * size + x] === -1 && !isFunctional(y, x, size) && !isAlignment(y, x, version)) {
+              matrix[y * size + x] = bit;
+              bitIdx++;
+            }
           }
         }
       }
-      c -= 2;
-      dir = -dir;
     }
-
     for (let i = 0; i < matrix.length; i++)
       if (matrix[i] === -1) matrix[i] = 0;
-  };
-
-  // -- Format info --------------------------------------------------
-  const fmtInfo = (ecl, mask) => {
-    const fi = FORMAT_INFO[ECL_MAP[ecl] * 8 + mask];
-    const bits = [];
-    for (let i = 0; i < 15; i++) bits.push((fi >> i) & 1);
-    return bits;
   };
 
   const isFunctional = (r, c, size) => {
@@ -1023,6 +1103,19 @@ const QR = (() => {
     return false;
   };
 
+  const isAlignment = (r, c, version) => {
+    const ap = ALIGN_POS[version];
+    if (!ap) return false;
+    const size = 17 + version * 4;
+    for (const ar of ap) {
+      for (const ac of ap) {
+        if ((ar === 6 && ac === 6) || (ar === 6 && ac === size - 7) || (ar === size - 7 && ac === 6)) continue;
+        if (Math.abs(r - ar) <= 2 && Math.abs(c - ac) <= 2) return true;
+      }
+    }
+    return false;
+  };
+
   const applyFormat = (matrix, ecl, mask) => {
     const size = Math.floor(Math.sqrt(matrix.length));
     const bits = fmtInfo(ecl, mask);
@@ -1033,30 +1126,24 @@ const QR = (() => {
     for (let i = 0; i <= 5; i++) matrix[8 * size + (5 - i)] = bits[9 + i];
     for (let i = 0; i <= 7; i++) matrix[8 * size + (size - 1 - i)] = bits[i];
     for (let i = 0; i <= 7; i++) matrix[(size - 1 - i) * size + 8] = bits[i];
-    matrix[size * 8] = 1;
+    matrix[(size - 8) * size + 8] = 1;
   };
 
-  // -- Version info (v7+) --------------------------------------------
+  // -- Version info (Nayuki: dynamic BCH computation for v7+) ---------
   const applyVersion = (matrix, version) => {
     if (version < 7) return;
     const size = Math.floor(Math.sqrt(matrix.length));
-    const V = [
-      null,null,null,null,null,null,null,
-      0x07C94, 0x085BC, 0x09A99, 0x0A4D3, 0x0BBF6,
-      0x0C762, 0x0D847, 0x0E60D, 0x0F928, 0x10B78,
-      0x1145D, 0x12A17, 0x13532, 0x149A6, 0x15683,
-      0x168C9, 0x177EC, 0x18EC4, 0x191E1, 0x1AFAB,
-      0x1B08E, 0x1CC1A, 0x1D33F, 0x1ED75, 0x1F250,
-      0x209D5, 0x216F0, 0x228BA, 0x2379F, 0x24B0B,
-      0x2542E, 0x26A64, 0x27541, 0x28C69,
-    ];
-    const bits = V[version];
-    for (let i = 0; i < 18; i++) {
-      const bit = (bits >>> i) & 1;
-      const rr = Math.floor(i / 3);
-      const cc = (size - 11) + (i % 3);
-      matrix[rr * size + cc] = bit;
-      matrix[cc * size + rr] = bit;
+    let rem = version;
+    for (let i = 0; i < 12; i++)
+      rem = (rem << 1) ^ ((rem >>> 11) * 0x1F25);
+    let bits = (version << 12) | rem;
+    for (let i = 0; i < 6; i++) {
+      for (let j = 0; j < 3; j++) {
+        const k = size - 11 + j;
+        matrix[k * size + i] = bits & 1;
+        matrix[i * size + k] = bits & 1;
+        bits >>>= 1;
+      }
     }
   };
 
@@ -1072,67 +1159,84 @@ const QR = (() => {
     (r, c) => ((((r + c) & 1) + ((r * c) % 3)) & 1) === 0,
   ];
 
-  // -- Penalty scoring -----------------------------------------------
+  // -- Penalty scoring (Nayuki) --------------------------------------
+  const PENALTY_N1 = 3, PENALTY_N2 = 3, PENALTY_N3 = 40, PENALTY_N4 = 10;
+
+  const finderPenaltyAddHistory = (runLength, runHistory, qrsize) => {
+    if (runHistory[0] === 0) runLength += qrsize;
+    for (let i = 6; i >= 1; i--) runHistory[i] = runHistory[i - 1];
+    runHistory[0] = runLength;
+  };
+
+  const finderPenaltyCountPatterns = (runHistory, qrsize) => {
+    const n = runHistory[1];
+    const core = n > 0 && runHistory[2] === n && runHistory[3] === n * 3 && runHistory[4] === n && runHistory[5] === n;
+    return (core && runHistory[0] >= n * 4 && runHistory[6] >= n ? 1 : 0)
+         + (core && runHistory[6] >= n * 4 && runHistory[0] >= n ? 1 : 0);
+  };
+
+  const finderPenaltyTerminateAndCount = (runColor, runLength, runHistory, qrsize) => {
+    if (runColor) { finderPenaltyAddHistory(runLength, runHistory, qrsize); runLength = 0; }
+    runLength += qrsize;
+    finderPenaltyAddHistory(runLength, runHistory, qrsize);
+    return finderPenaltyCountPatterns(runHistory, qrsize);
+  };
+
   const scoreMatrix = (matrix) => {
     const size = Math.floor(Math.sqrt(matrix.length));
     let score = 0;
 
-    // Rule 1: consecutive runs
-    for (let r = 0; r < size; r++) {
-      let run = 1;
-      for (let c = 1; c < size; c++) {
-        if (matrix[r * size + c] === matrix[r * size + c - 1]) run++;
-        else { if (run >= 5) score += run - 2; run = 1; }
-      }
-      if (run >= 5) score += run - 2;
-    }
-    for (let c = 0; c < size; c++) {
-      let run = 1;
-      for (let r = 1; r < size; r++) {
-        if (matrix[r * size + c] === matrix[(r - 1) * size + c]) run++;
-        else { if (run >= 5) score += run - 2; run = 1; }
-      }
-      if (run >= 5) score += run - 2;
-    }
-
-    // Rule 2: 2x2 blocks
-    for (let r = 0; r < size - 1; r++)
-      for (let c = 0; c < size - 1; c++)
-        if (matrix[r * size + c] === matrix[(r+1) * size + c] &&
-            matrix[r * size + c] === matrix[r * size + c + 1] &&
-            matrix[r * size + c] === matrix[(r+1) * size + c + 1])
-          score += 3;
-
-    // Rule 3: finder-like patterns
-    const p1 = [1,0,1,1,1,0,1,0,0,0,0];
-    const p2 = [0,0,0,0,1,0,1,1,1,0,1];
-    for (let r = 0; r < size; r++) {
-      for (let c = 0; c < size - 10; c++) {
-        let m1 = true, m2 = true;
-        for (let k = 0; k < 11; k++) {
-          if (matrix[r * size + c + k] !== p1[k]) m1 = false;
-          if (matrix[r * size + c + k] !== p2[k]) m2 = false;
+    // Rows: consecutive runs + finder patterns
+    for (let y = 0; y < size; y++) {
+      let runColor = false, runX = 0;
+      const runHistory = [0,0,0,0,0,0,0];
+      for (let x = 0; x < size; x++) {
+        if (matrix[y * size + x] === (runColor ? 1 : 0)) {
+          runX++;
+          if (runX === 5) score += PENALTY_N1;
+          else if (runX > 5) score++;
+        } else {
+          finderPenaltyAddHistory(runX, runHistory, size);
+          if (!runColor) score += finderPenaltyCountPatterns(runHistory, size) * PENALTY_N3;
+          runColor = matrix[y * size + x] !== 0;
+          runX = 1;
         }
-        if (m1 || m2) score += 40;
       }
+      score += finderPenaltyTerminateAndCount(runColor, runX, runHistory, size) * PENALTY_N3;
     }
-    for (let c = 0; c < size; c++) {
-      for (let r = 0; r < size - 10; r++) {
-        let m1 = true, m2 = true;
-        for (let k = 0; k < 11; k++) {
-          if (matrix[(r + k) * size + c] !== p1[k]) m1 = false;
-          if (matrix[(r + k) * size + c] !== p2[k]) m2 = false;
+    // Columns: consecutive runs + finder patterns
+    for (let x = 0; x < size; x++) {
+      let runColor = false, runY = 0;
+      const runHistory = [0,0,0,0,0,0,0];
+      for (let y = 0; y < size; y++) {
+        if (matrix[y * size + x] === (runColor ? 1 : 0)) {
+          runY++;
+          if (runY === 5) score += PENALTY_N1;
+          else if (runY > 5) score++;
+        } else {
+          finderPenaltyAddHistory(runY, runHistory, size);
+          if (!runColor) score += finderPenaltyCountPatterns(runHistory, size) * PENALTY_N3;
+          runColor = matrix[y * size + x] !== 0;
+          runY = 1;
         }
-        if (m1 || m2) score += 40;
       }
+      score += finderPenaltyTerminateAndCount(runColor, runY, runHistory, size) * PENALTY_N3;
     }
 
-    // Rule 4: dark/light ratio
+    // 2x2 blocks
+    for (let y = 0; y < size - 1; y++)
+      for (let x = 0; x < size - 1; x++)
+        if (matrix[y * size + x] === matrix[(y+1) * size + x] &&
+            matrix[y * size + x] === matrix[y * size + x + 1] &&
+            matrix[y * size + x] === matrix[(y+1) * size + x + 1])
+          score += PENALTY_N2;
+
+    // Dark/light balance
     let dark = 0;
     for (const v of matrix) if (v) dark++;
-    const pct = Math.floor((dark * 100) / matrix.length);
-    const prev = pct - (pct % 5);
-    score += Math.min(Math.abs(prev - 50) / 5, Math.abs(prev + 5 - 50) / 5) * 10;
+    const total = size * size;
+    const k = Math.floor((Math.abs(dark * 20 - total * 10) + total - 1) / total) - 1;
+    score += k * PENALTY_N4;
 
     return score;
   };
@@ -1145,7 +1249,7 @@ const QR = (() => {
       const fn = MASK_FNS[forceMask];
       for (let r = 0; r < size; r++)
         for (let c = 0; c < size; c++)
-          if (!isFunctional(r, c, size) && matrix[r * size + c] >= 0)
+          if (!isFunctional(r, c, size) && !isAlignment(r, c, version) && matrix[r * size + c] >= 0)
             matrix[r * size + c] ^= fn(r, c) ? 1 : 0;
       applyFormat(matrix, ecl, forceMask);
       applyVersion(matrix, version);
@@ -1159,8 +1263,10 @@ const QR = (() => {
       const fn = MASK_FNS[m];
       for (let r = 0; r < size; r++)
         for (let c = 0; c < size; c++)
-          if (!isFunctional(r, c, size) && test[r * size + c] >= 0)
+          if (!isFunctional(r, c, size) && !isAlignment(r, c, version) && test[r * size + c] >= 0)
             test[r * size + c] ^= fn(r, c) ? 1 : 0;
+      applyFormat(test, ecl, m);
+      if (version >= 7) applyVersion(test, version);
       const s = scoreMatrix(test);
       if (s < bestScore) { bestScore = s; bestMask = m; }
     }
@@ -1169,7 +1275,7 @@ const QR = (() => {
     const fn = MASK_FNS[bestMask];
     for (let r = 0; r < size; r++)
       for (let c = 0; c < size; c++)
-        if (!isFunctional(r, c, size) && matrix[r * size + c] >= 0)
+        if (!isFunctional(r, c, size) && !isAlignment(r, c, version) && matrix[r * size + c] >= 0)
           matrix[r * size + c] ^= fn(r, c) ? 1 : 0;
 
     applyFormat(matrix, ecl, bestMask);
@@ -1179,13 +1285,16 @@ const QR = (() => {
 
   // -- Version selection ----------------------------------------------
   const chooseVersion = (text, ecl, versionMin) => {
-    const len = new TextEncoder().encode(text).length;
+    const bytes = new TextEncoder().encode(text);
+    const len = bytes.length;
     const capTable = CAP[ecl];
     for (let v = versionMin; v <= 40; v++) {
       const cap = capTable[v];
       if (!cap) continue;
-      const dataCap = cap[0] - cap[1] * (cap[2] + cap[4]);
-      if (len <= dataCap) return v;
+      const dataCap = cap[0];
+      // Total bits: mode(4) + CCI(8 or 16) + data(len*8)
+      const totalBits = 4 + (v <= 9 ? 8 : 16) + len * 8;
+      if (totalBits <= dataCap * 8) return v;
     }
     return null;
   };
@@ -1398,6 +1507,14 @@ versionMinInput.addEventListener('input', () => {
 maskSelect.addEventListener('change', () => {
   state.maskMode = parseInt(maskSelect.value, 10);
   refresh();
+});
+
+// Enter key in text input triggers generate immediately
+textInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    clearTimeout(debounce);
+    refresh();
+  }
 });
 
 // Theme presets

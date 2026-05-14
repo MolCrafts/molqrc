@@ -14,7 +14,7 @@ def write(matrix, side, path, *, scale=10):
     except ImportError:
         raise ImportError(
             "Pillow is needed for PNG.  "
-            "Use .svg for zero-dependency output, or: pip install Pillow"
+            "Use .svg for SVG output, or: pip install Pillow"
         )
 
     quiet = 4

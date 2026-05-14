@@ -2,7 +2,7 @@
 
 Usage:
     molqrc preview "hello"                 Terminal preview
-    molqrc pic "hello" -o qr.svg           Save as SVG (zero-dependency)
+    molqrc pic "hello" -o qr.svg           Save as SVG
     molqrc pic "hello" -o qr.png           Save as PNG (needs Pillow)
     molqrc web build "hello" -o dir/       Static web page
     molqrc web serve "hello"               Build + serve locally
@@ -55,13 +55,13 @@ def main():
     web_sub = web.add_subparsers(dest="web_command", required=True)
 
     wb = web_sub.add_parser("build", help="Build static web page")
-    wb.add_argument("text", help="Text to encode")
+    wb.add_argument("text", nargs="?", default="", help="Text to encode")
     wb.add_argument("-o", "--output", default="build", help="Output directory")
     wb.add_argument("--title", default="QR Code", help="Page title")
     add_encode_args(wb)
 
     ws = web_sub.add_parser("serve", help="Build + serve locally")
-    ws.add_argument("text", help="Text to encode")
+    ws.add_argument("text", nargs="?", default="", help="Text to encode")
     ws.add_argument("-o", "--output", default="build", help="Output directory")
     ws.add_argument("--port", type=int, default=8080, help="Port")
     ws.add_argument(
@@ -184,7 +184,7 @@ def _make_qr(text, **kw):
     except ImportError as e:
         print(f"molqrc: failed to import — {e}", file=sys.stderr)
         print(
-            "Build the C library first: cmake -B build && cmake --build build",
+            "Run: pip install -e .",
             file=sys.stderr,
         )
         sys.exit(1)

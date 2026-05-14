@@ -1,6 +1,6 @@
-"""molqrc — Python bindings for the molqrc QR Code C library."""
+"""molqrc — QR Code generation for Python."""
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 import ctypes
 import os
@@ -173,7 +173,11 @@ class QRCode:
         boost_ecl=True,
     ):
         if not text:
-            raise ValueError("text must not be empty")
+            self._side = 21
+            self._matrix = bytearray(21 * 21)
+            self._text = ""
+            self._ecl = ECL_M
+            return
         buf = (ctypes.c_ubyte * (MAX_SIZE * MAX_SIZE))()
         side = _lib.molqrc_encode_text(
             text.encode("utf-8"),
