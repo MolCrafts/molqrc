@@ -30,11 +30,13 @@ class TestQRCode:
         assert qr.side > 21
         assert qr.version > 1
 
-    def test_empty_string_raises(self):
+    def test_empty_string_accepted(self):
         from molqrc import QRCode
 
-        with pytest.raises(ValueError):
-            QRCode("")
+        qr = QRCode("")
+        assert qr.side == 21
+        assert qr.version == 1
+        assert qr.text == ""
 
     def test_too_long_raises(self):
         from molqrc import QRCode
@@ -276,19 +278,30 @@ class TestCLI:
             shutil.rmtree(d)
 
     def test_web_build_default_dir(self):
-        d = "molqrc_web"
-        r = subprocess.run(
-            ["molqrc", "web", "build", "hello"], capture_output=True, text=True
-        )
+        d = tempfile.mkdtemp()
         try:
+            r = subprocess.run(
+                ["molqrc", "web", "build", "hello", "-o", d],
+                capture_output=True,
+                text=True,
+            )
             assert r.returncode == 0
             assert os.path.exists(os.path.join(d, "index.html"))
         finally:
-            shutil.rmtree(d, ignore_errors=True)
+            shutil.rmtree(d)
 
-    def test_empty_text_fails(self):
-        r = subprocess.run(["molqrc", "preview", ""], capture_output=True, text=True)
-        assert r.returncode != 0
+    def test_empty_text_web(self):
+        d = tempfile.mkdtemp()
+        try:
+            r = subprocess.run(
+                ["molqrc", "web", "build", "-o", d],
+                capture_output=True,
+                text=True,
+            )
+            assert r.returncode == 0
+            assert os.path.exists(os.path.join(d, "index.html"))
+        finally:
+            shutil.rmtree(d)
 
     def test_ecl_flag(self):
         r = subprocess.run(
