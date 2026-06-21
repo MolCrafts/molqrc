@@ -1,18 +1,17 @@
 ---
 mol_project:
-  language: c
-  binding: python-ctypes
+  language: rust
   stage: experimental
   specs_path: .claude/specs/
   notes_path: .claude/notes/
   science:
     required: false
   build:
-    system: cmake
-    command: cmake -B build && cmake --build build
-    test: ctest --test-dir build --output-on-failure
+    system: cargo
+    command: cargo build --all-targets
+    test: cargo test
   doc:
-    style: doxygen
+    style: rustdoc
 ---
 
 # CLAUDE.md
@@ -23,15 +22,15 @@ mol_project:
 
 ## What this repo is
 
-`molqrc` generates QR Codes (Version 1–40) from text, producing module matrices
-that can be exported to SVG, PNG, terminal preview, or an interactive web page.
+`molqrc` is a Rust QR Code generator library (Version 1–40) — a faithful port of
+Project Nayuki's `qrcodegen`. It produces the raw module grid of a QR symbol.
 
 ## Where things live
 
-- Source code: `src/`
-- Public header: `include/molqrc.h`
-- Tests: `tests/`
-- Python bindings: `bindings/python/`
+- Library source: `src/lib.rs`
+- Test suite: `src/tests.rs` (`#[cfg(test)] mod tests`)
+- WASM bindings crate: `wasm/` (`molqrc-wasm`)
+- Web app (interactive QR designer): `molqrc_web/` (built wasm in `molqrc_web/pkg/`)
 - Passive project knowledge: `.claude/notes/`
 - Active runtime specs: `.claude/specs/`
 
@@ -45,7 +44,7 @@ For non-trivial work, prefer:
 
 ## What must never change casually
 
-- Public C API in `include/molqrc.h`
-- QR Code matrix output format (`0` = white, `1` = black, row-major)
+- Public Rust API in `src/lib.rs` (`QrCode`, `QrSegment`, `QrCodeEcc`, …)
+- Fidelity to the upstream Project Nayuki `qrcodegen` algorithm
 
 <!-- mol-agent:bootstrap:managed end -->

@@ -1,0 +1,17 @@
+[package]
+name = "molqrc"
+version = "0.1.1"
+edition = "2021"
+description = "High-quality QR Code generator library — a faithful Rust port of Project Nayuki's qrcodegen"
+homepage = "https://www.nayuki.io/page/qr-code-generator-library"
+repository = "https://github.com/Roy-Kid/molqrc"
+readme = "README.md"
+keywords = ["qr-code", "barcode", "encoder", "image"]
+categories = ["encoding", "multimedia::images"]
+license = "BSD-3-Clause"
+
+[lib]
+name = "molqrc"
+
+[workspace]
+members = ["wasm"]

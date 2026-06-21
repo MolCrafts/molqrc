@@ -1,140 +1,140 @@
-# molqrc
+<div align="center">
 
-QR Code generator — Python CLI and API.
+<h1>
+  <img src=".github/assets/moko.svg" alt="" height="48" align="absmiddle">
+  &nbsp;molqrc
+</h1>
 
-Version 1–40, all four ECL levels (L/M/Q/H), Reed-Solomon error correction,
-mask selection, automatic encoding mode detection (Numeric / Alphanumeric / Byte).
+<p><strong>High-quality QR Code generator library in Rust.</strong></p>
+
+<p>
+  <img src="https://img.shields.io/github/actions/workflow/status/MolCrafts/molqrc/ci.yml?style=flat-square&logo=githubactions&logoColor=white&label=CI" alt="CI">
+  <img src="https://img.shields.io/badge/rust-stable-orange?style=flat-square&logo=rust&logoColor=white" alt="Rust">
+  <img src="https://img.shields.io/badge/license-BSD--3--Clause-18432B?style=flat-square" alt="License">
+</p>
+
+<p>
+  <a href="#quick-start"><b>Quick start</b></a> &nbsp;&middot;&nbsp;
+  <a href="#molcrafts-ecosystem"><b>Ecosystem</b></a>
+</p>
+
+</div>
+
+molqrc is a QR Code generator library for Rust — a faithful port of
+[Project Nayuki's qrcodegen](https://www.nayuki.io/page/qr-code-generator-library).
+It supports versions 1–40, all four error-correction levels, automatic mode
+detection, manual mask selection, and outputs the raw module grid of the QR symbol.
+
+## Capabilities
+
+| Area | Capability |
+|------|------------|
+| Encoding | QR versions 1–40, automatic smallest-version selection within a range |
+| Error correction | All four ECL levels (Low / Medium / Quartile / High), Reed-Solomon, optional ECL boost |
+| Modes | Automatic mode detection — Numeric, Alphanumeric, Byte, Kanji; explicit ECI |
+| Masking | All 8 mask patterns, or automatic best-mask selection |
+| Segment API | Mixed-mode encoding from explicit segments |
+| Output | Raw modules via `qr.get_module(x, y)`; see the demo for SVG / ASCII rendering |
+
+## Install
+
+Add to your `Cargo.toml`:
+
+```toml
+[dependencies]
+molqrc = "0.1"
+```
 
 ## Quick start
 
-```bash
-# Build and install
-pip install -e .
+```rust
+use molqrc::{QrCode, QrCodeEcc};
 
-# Terminal preview
-molqrc preview "hello world"
-
-# Save as SVG
-molqrc pic "hello world" -o qr.svg
-
-# Save as PNG (needs Pillow)
-molqrc pic "hello world" -o qr.png
-
-# Static web page → deploy to Cloudflare Pages
-molqrc web build "hello world" -o dist/
-```
-
-## Deploy to Cloudflare Pages
-
-Generate the static site, then deploy the output directory:
-
-```bash
-molqrc web build "Your Text" -o dist/
-
-# Option A: via Wrangler CLI
-npx wrangler pages deploy dist/
-
-# Option B: connect GitHub repo → Cloudflare Pages dashboard
-#   Build command: pip install -e . && molqrc web build "Text" -o dist/
-#   Publish directory: dist/
-```
-
-The generated page is a single self-contained `index.html` — deployable to
-any static host (Cloudflare Pages, Netlify, GitHub Pages, etc.).
-
-## Python API
-
-```python
-from molqrc import QRCode
-
-qr = QRCode("hello")
-
-# Core
-qr.version   # 2
-qr.side      # 25 (modules)
-qr.matrix    # bytearray, 0=white 1=black, row-major
-
-# Advanced options
-qr = QRCode("hello",
-    min_version=1,        # 1–40
-    max_version=40,
-    ecl=ECL_M,            # ECL_L=0, ECL_M=1, ECL_Q=2, ECL_H=3
-    mask=MASK_AUTO,       # 0–7 or -1 for auto
-    boost_ecl=True,       # auto-boost ECL if version unchanged
-)
-
-# Export
-qr.save("qr.svg")         # SVG
-qr.save("qr.png")         # PNG (needs Pillow)
-
-# Terminal preview (best-effort)
-print(qr.preview())
-
-# Static web page
-qr.to_web("dist/", title="My QR")
-```
-
-## Segment API
-
-```python
-from molqrc import (
-    make_segment_bytes, make_segment_numeric,
-    make_segment_alphanumeric, make_segment_eci,
-    encode_segments, ECL_M, MASK_AUTO,
-)
-
-# Mixed-mode: ECI + numeric + alphanumeric + binary
-segs = [
-    make_segment_eci(127),
-    make_segment_numeric("1234567"),
-    make_segment_alphanumeric("HELLO"),
-    make_segment_bytes(b"binary data"),
-]
-side, matrix = encode_segments(segs, min_version=1, max_version=40,
-                                ecl=ECL_M, mask=MASK_AUTO, boost_ecl=True)
-```
-
-## C API
-
-```c
-#include <molqrc.h>
-
-// Simple encode
-unsigned char matrix[177 * 177];
-int side = molqrc_encode_text("hello", matrix, 1, 40,
-                               MOLQRC_ECL_M, MOLQRC_MASK_AUTO, 1);
-
-// Segment-based encode with full control
-unsigned char buf[4096];
-molqrc_segment_t segs[2];
-segs[0] = molqrc_make_numeric("1234567890", buf);
-segs[1] = molqrc_make_alphanumeric("HELLO", buf + 512);
-
-int side = molqrc_encode_segments(segs, 2, matrix,
-                                   1, 40, MOLQRC_ECL_Q,
-                                   MOLQRC_MASK_AUTO, 0);
-
-// Render matrix via callback
-void draw(void *user, int x, int y, int w, int h) {
-    // fill rect on your canvas
+let qr = QrCode::encode_text("Hello, world!", QrCodeEcc::Medium).unwrap();
+for y in 0..qr.size() {
+    for x in 0..qr.size() {
+        print!("{}", if qr.get_module(x, y) { "██" } else { "  " });
+    }
+    println!();
 }
-molqrc_draw_matrix(matrix, side, 0, 0, 400, 400, draw, NULL);
 ```
 
-## Requirements
+### Manual operation
 
-- Python: 3.9+
-- Optional: Pillow (for PNG output)
+```rust
+use molqrc::{QrCode, QrCodeEcc, QrSegment, Version, Mask};
 
-## Project structure
-
+let text = "3141592653589793238462643383";
+let segs = QrSegment::make_segments(text);
+let qr = QrCode::encode_segments_advanced(
+    &segs, QrCodeEcc::High,
+    Version::new(5), Version::new(5), Some(Mask::new(2)), false,
+).unwrap();
 ```
-src/          QR encoding (matrix, Reed-Solomon, segments)
-include/      Public header (molqrc.h)
-bindings/     Python bindings + CLI
-tests/        C tests (ctest) + Python tests (pytest)
+
+## WebAssembly & web demo
+
+The `wasm/` crate (`molqrc-wasm`) exposes the generator to JavaScript via
+`wasm-bindgen`: `qr_modules`, `qr_side`, `qr_svg`, and `qr_ascii`.
+
+Build the WebAssembly module into the web directory:
+
+```bash
+wasm-pack build wasm --target web --out-dir ../molqrc_web/pkg --out-name molqrc
 ```
+
+Then serve the page (a static server is required — ES modules and WebAssembly
+do not load over `file://`):
+
+```bash
+python3 -m http.server -d molqrc_web 8000
+# open http://localhost:8000
+```
+
+`molqrc_web/index.html` is an interactive QR designer that encodes text live in
+the browser via the WASM core: theme presets, module styles (squares / rounded /
+circles), custom colours, optional title/subtitle, an advanced panel (ECL,
+minimum version, mask), and PNG (`toDataURL`) / SVG download.
+
+## Tests
+
+```bash
+cargo test            # core library + WASM crate
+```
+
+The suite is migrated from the original C and Python test suites: GF(256)
+arithmetic, Reed-Solomon divisor/remainder, bit-buffer packing, data-codeword
+capacity, alignment-pattern positions, character-count bits, the segment
+constructors (with exact bit/byte outputs), encoding behaviour, and SVG/ASCII
+rendering.
+
+## MolCrafts ecosystem
+
+| Project | Role |
+|---------|------|
+| [molpy](https://github.com/MolCrafts/molpy)     | Python toolkit — the shared molecular data model & workflow layer |
+| [molrs](https://github.com/MolCrafts/molrs)     | Rust core — molecular data structures & compute kernels (native + WASM) |
+| [molpack](https://github.com/MolCrafts/molpack) | Packmol-grade molecular packing (Rust + Python) |
+| [molvis](https://github.com/MolCrafts/molvis)   | WebGL molecular visualization & editing |
+| [molexp](https://github.com/MolCrafts/molexp)   | Workflow & experiment-management platform |
+| [molnex](https://github.com/MolCrafts/molnex)   | Molecular machine-learning framework |
+| [molq](https://github.com/MolCrafts/molq)       | Unified job queue — local / SLURM / PBS / LSF |
+| [molcfg](https://github.com/MolCrafts/molcfg)   | Layered configuration library |
+| [mollog](https://github.com/MolCrafts/mollog)   | Structured logging, stdlib-compatible |
+| [molhub](https://github.com/MolCrafts/molhub)   | Molecular dataset hub |
+| [molmcp](https://github.com/MolCrafts/molmcp)   | MCP server for the ecosystem |
+| [molrec](https://github.com/MolCrafts/molrec)   | Atomistic record specification |
 
 ## License
 
-BSD-3-Clause
+molqrc is licensed under the **BSD-3-Clause** license — see [LICENSE](LICENSE).
+
+The QR Code engine (`src/lib.rs`) is a port of Project Nayuki's qrcodegen, which
+upstream is distributed under the MIT License; that copyright and permission
+notice is retained verbatim in the file's header.
+
+<hr>
+
+<div align="center">
+<sub>Crafted with 💚 by <a href="https://github.com/MolCrafts">MolCrafts</a></sub>
+</div>
