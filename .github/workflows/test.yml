@@ -1,0 +1,49 @@
+name: test
+
+# cargo test in two tiers. A feature branch (fork or MolCrafts) runs the fast
+# tier: Linux. dev, master, main and pull requests into them run the full
+# tier: Linux, macOS and Windows, plus the WASM bindings built for
+# wasm32-unknown-unknown.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [dev, master, main]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ !contains(fromJSON('["dev","master","main"]'), github.base_ref || github.ref_name) }}
+
+jobs:
+  cargo:
+    name: test / cargo (${{ matrix.os }})
+    # A pull request from a branch of this same repository runs only when its
+    # push ran the fast tier, i.e. when the head is a feature branch.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository || !contains(fromJSON('["dev","master","main"]'), github.head_ref)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(contains(fromJSON('["dev","master","main"]'), github.base_ref || github.ref_name) && '["ubuntu-latest","macos-latest","windows-latest"]' || '["ubuntu-latest"]') }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache: test
+      - run: cargo test --workspace
+
+  wasm:
+    name: test / wasm
+    if: contains(fromJSON('["dev","master","main"]'), github.base_ref || github.ref_name) && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository || !contains(fromJSON('["dev","master","main"]'), github.head_ref))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache: wasm
+      - run: cargo build -p molqrc-wasm --release --target wasm32-unknown-unknown

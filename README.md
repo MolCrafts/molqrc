@@ -8,7 +8,7 @@
 <p><strong>High-quality QR Code generator library in Rust.</strong></p>
 
 <p>
-  <img src="https://img.shields.io/github/actions/workflow/status/MolCrafts/molqrc/ci.yml?style=flat-square&logo=githubactions&logoColor=white&label=CI" alt="CI">
+  <img src="https://img.shields.io/github/actions/workflow/status/MolCrafts/molqrc/test.yml?style=flat-square&logo=githubactions&logoColor=white&label=CI" alt="CI">
   <img src="https://img.shields.io/badge/rust-stable-orange?style=flat-square&logo=rust&logoColor=white" alt="Rust">
   <img src="https://img.shields.io/badge/license-BSD--3--Clause-18432B?style=flat-square" alt="License">
 </p>
