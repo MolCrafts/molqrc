@@ -87,7 +87,11 @@ pub fn render_ascii(text: &str, ecl: u8, border: usize) -> Result<String, String
     for r in 0..side {
         let mut row = light.repeat(border);
         for c in 0..side {
-            row.push_str(if modules[r * side + c] != 0 { dark } else { light });
+            row.push_str(if modules[r * side + c] != 0 {
+                dark
+            } else {
+                light
+            });
         }
         row.push_str(&light.repeat(border));
         push_row(row);
@@ -115,10 +119,9 @@ pub fn render_encode(
     } else {
         Some(Mask::new((mask_mode as u8).min(7)))
     };
-    let qr = QrCode::encode_segments_advanced(
-        &segs, ecl_from_u8(ecl), minv, Version::MAX, mask, false,
-    )
-    .map_err(|e| e.to_string())?;
+    let qr =
+        QrCode::encode_segments_advanced(&segs, ecl_from_u8(ecl), minv, Version::MAX, mask, false)
+            .map_err(|e| e.to_string())?;
     let side = qr.size() as usize;
     let mut modules = Vec::with_capacity(side * side);
     for y in 0..qr.size() {
@@ -177,9 +180,13 @@ pub fn qr_encode(
     version_min: u8,
     mask_mode: i32,
 ) -> Result<QrResult, JsValue> {
-    let (side, version, mask, modules) =
-        js_err(render_encode(text, ecl, version_min, mask_mode))?;
-    Ok(QrResult { side, version, mask, modules })
+    let (side, version, mask, modules) = js_err(render_encode(text, ecl, version_min, mask_mode))?;
+    Ok(QrResult {
+        side,
+        version,
+        mask,
+        modules,
+    })
 }
 
 /// Row-major module grid (`1`=dark, `0`=light); the side length is the integer
@@ -217,8 +224,8 @@ mod tests {
         let (side, modules) = render_matrix("hello", 0).unwrap();
         assert_eq!(side, 21);
         assert_eq!(modules.len(), 441);
-        assert!(modules.iter().any(|&b| b == 1));
-        assert!(modules.iter().any(|&b| b == 0));
+        assert!(modules.contains(&1));
+        assert!(modules.contains(&0));
     }
 
     // Migrated from Python TestExport.

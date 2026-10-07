@@ -1,0 +1,5 @@
+# What CI (.github/actions/setup-rust) and rustup install for this checkout.
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown"]
