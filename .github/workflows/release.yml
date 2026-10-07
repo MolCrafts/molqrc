@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup-rust
+      - uses: MolCrafts/molcrafts-ci/actions/setup-rust@master
       - name: Tag matches the crate version
         if: startsWith(github.ref, 'refs/tags/v')
         run: |

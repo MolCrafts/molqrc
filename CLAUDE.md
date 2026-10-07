@@ -51,19 +51,21 @@ For non-trivial work, prefer:
 
 ## CI
 
-One workflow per kind of work. A *feature* ref is any branch other than
-`dev`/`master`/`main`; an *integration* ref is one of those, or a pull request
-into one. A pull request from a branch of this repository does not re-run
-what its push already ran: lint never, the full test tier only when the head
-is a feature branch (its push ran the fast tier). The toolchain is whatever
-`rust-toolchain.toml` names, locally and in CI (`.github/actions/setup-rust`).
+One workflow per kind of work; shared setup comes from
+`MolCrafts/molcrafts-ci/actions/<name>@master`. `test / tier` picks the tier:
+the *fast* tier runs on a feature-branch push to MolCrafts; the *full* tier on
+every push to a fork (so a branch is proven before its pull request), on
+`dev`/`master`/`main` on MolCrafts, on pull requests, tags and dispatches. A
+pull request inside a fork is skipped (its push already ran the full tier).
+The toolchain is whatever `rust-toolchain.toml` names, locally and in CI
+(setup-rust).
 
-| workflow | feature branch (fork or MolCrafts) | integration ref (fork or MolCrafts) | MolCrafts only |
+| workflow | fast tier (feature branch on MolCrafts) | full tier (fork pushes, dev/master/main, PRs, tags) | MolCrafts only |
 |---|---|---|---|
 | `lint.yml` | `lint / rust` (fmt, clippy `-D warnings`, rustdoc `-D warnings`) | same | — |
-| `test.yml` | `test / cargo (ubuntu-latest)` | `test / cargo ({ubuntu,macos,windows}-latest)`, `test / wasm` (wasm32 build) | — |
+| `test.yml` | `test / tier`, `test / rust (ubuntu-latest)` | `test / tier`, `test / rust ({ubuntu,macos,windows}-latest)`, `test / wasm` (wasm32 build) | — |
 | `release.yml` | — | — | `v*` tag: lint + test + `release / crates` (`cargo publish`); `workflow_dispatch` = dry run (`cargo publish --dry-run`) |
 
 The `protect-master` ruleset on `master` requires a pull request, blocks force
-pushes and deletion, and requires the integration-tier `lint /` and `test /`
+pushes and deletion, and requires `test / tier` and the full-tier `lint /` and `test /`
 checks. Releases need the `CARGO_REGISTRY_TOKEN` secret on MolCrafts.
