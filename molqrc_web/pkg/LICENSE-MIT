@@ -1,7 +1,7 @@
 MIT License
 
-Applies to the QR Code engine — `src/lib.rs` — which is vendored verbatim from
-Project Nayuki's qrcodegen. See LICENSE for how this repository is licensed as
+Applies to the QR Code engine — `src/` — which is derived from Project
+Nayuki's qrcodegen. See LICENSE for how this repository is licensed as
 a whole.
 
 QR Code generator library (Rust)

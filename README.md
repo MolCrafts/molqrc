@@ -20,8 +20,9 @@
 
 </div>
 
-molqrc is a QR Code generator library for Rust — a faithful port of
-[Project Nayuki's qrcodegen](https://www.nayuki.io/page/qr-code-generator-library).
+molqrc is a QR Code generator library for Rust, derived from
+[Project Nayuki's qrcodegen](https://www.nayuki.io/page/qr-code-generator-library)
+and conformance-tested against it.
 It supports versions 1–40, all four error-correction levels, automatic mode
 detection, manual mask selection, and outputs the raw module grid of the QR symbol.
 
@@ -36,27 +37,47 @@ detection, manual mask selection, and outputs the raw module grid of the QR symb
 | Segment API | Mixed-mode encoding from explicit segments |
 | Output | Raw modules via `qr.get_module(x, y)`; SVG / ASCII rendering in the WASM crate |
 
-> Kanji mode is present in the `QrSegmentMode` enum but has no constructor —
-> upstream's Rust port does not implement one. CJK text is encoded as UTF-8 in
+> Kanji mode is present in the `QrSegmentMode` enum but has no constructor,
+> as in upstream's Rust library. CJK text is encoded as UTF-8 in
 > Byte mode, which is what virtually every QR reader expects.
 
 ## Correctness
 
-`src/lib.rs` is not "based on" Project Nayuki's `qrcodegen` — it **is** that
-file, byte for byte, pinned at upstream commit
-[`f40366c`](https://github.com/nayuki/QR-Code-generator/blob/f40366c40d8d1956081f7ec643d240c02a81df52/rust/src/lib.rs).
-Two checks run in CI to keep that claim honest:
+The engine is a modular Rust rewrite of Project Nayuki's
+[`qrcodegen`](https://github.com/nayuki/QR-Code-generator). Correctness is
+defined by agreement with that library, and `cargo test` checks it module for
+module. The reference is a dev-dependency pinned to upstream commit
+[`bcfe1b0`](https://github.com/nayuki/QR-Code-generator/tree/bcfe1b018cec5f1f91b5705eca5bb4cdd34e9f8d).
 
-```bash
-./scripts/verify-upstream-fidelity.sh   # src/lib.rs == upstream, modulo recorded diffs
-./scripts/verify-wasm-parity.sh         # compiled wasm == native, module for module
-```
+`tests/conformance.rs` runs every case through both libraries. They must return
+the same version, ECC level, mask and modules, or the same error with the same
+numbers. The cases are:
 
-The first fails on any unrecorded edit to the QR algorithm — including an
-accidental `cargo fmt`. The second encodes 32 text × ECC-level cases through the
-compiled WebAssembly build and diffs every module against native output, so a
-`wasm-bindgen` or `wasm-opt` regression cannot slip through while native tests
-stay green.
+- **Capacity:** for every version × ECC level × mode (numeric, alphanumeric,
+  byte), the longest payload that fits and one character more.
+  The standard's absolute limits (7089 digits, 4296 alphanumeric, 2953 bytes)
+  are also tested through `encode_text`/`encode_binary`.
+- **Character-count fields:** 2<sup>n</sup>−1 and 2<sup>n</sup> characters for
+  every mode, across the field-width steps at versions 9/10 and 26/27. This
+  includes Kanji and ECI segments built with `QrSegment::new`.
+- **Every version × level × mask** through `encode_codewords`, plus automatic
+  masking of degenerate payloads (all 0x00, all 0xFF, 0xAA). Also 6000 sparse payloads
+  where the dark/light balance rule decides the mask.
+- **ECI designators** at each width edge (127/128, 16383/16384, 999999), segment
+  factories and mode detection over the first 12288 code points, and random
+  mixed segment lists.
+- **A seeded copy of Nayuki's cross-language batch tester** (the trial
+  distribution of the removed `qrcodegen-batch-test.py`).
+
+`tests/panics.rs` checks that invalid arguments panic exactly where the
+reference panics. Every test gate has been mutation-checked: injected bugs in
+masks, format and version bits, Reed-Solomon, interleaving, capacity tables,
+penalty rules and segment encoding each fail the suite.
+
+`./scripts/verify-wasm-parity.sh` additionally encodes 32 text × ECC-level cases
+through the compiled WebAssembly build and diffs every module against native
+output. This catches a `wasm-bindgen` or `wasm-opt` regression that the native
+tests cannot see.
 
 ## Install
 
@@ -159,25 +180,22 @@ minimum version, mask), and PNG (`toDataURL`) / SVG download.
 ## Development
 
 ```bash
-cargo test --workspace                    # core library + WASM crate
+cargo test --workspace                    # unit, conformance and WASM-crate tests
 cargo clippy --workspace --all-targets    # lints
-./scripts/fmt.sh                          # format (NOT `cargo fmt --all`)
-./scripts/verify-upstream-fidelity.sh     # src/lib.rs == upstream qrcodegen
+cargo fmt --all                           # format
 ./scripts/verify-wasm-parity.sh           # compiled wasm == native
 ```
 
-> **Do not run `cargo fmt --all`.** It reformats ~1080 of `src/lib.rs`'s 1288
-> lines and breaks the byte-identity with upstream. `./scripts/fmt.sh` formats
-> everything else. rustfmt's own `ignore` key is nightly-only, which is why the
-> exclusion lives in a script. For the same reason, Clippy's style lints on
-> `src/lib.rs` are silenced in `Cargo.toml` rather than fixed — "fixing" one
-> would fork the file from upstream.
+The engine lives in `src/`, one module per concern:
+- `segment.rs`, `bits.rs`: segments and bit packing;
+- `capacity.rs`: version geometry and codeword tables;
+- `reed_solomon.rs`: error correction and interleaving;
+- `canvas.rs`: function patterns, codeword placement and masks;
+- `penalty.rs`: automatic mask choice;
+- `qrcode.rs`: the encoding pipeline.
 
-The suite is migrated from the original C and Python test suites: GF(256)
-arithmetic, Reed-Solomon divisor/remainder, bit-buffer packing, data-codeword
-capacity, alignment-pattern positions, character-count bits, the segment
-constructors (with exact bit/byte outputs), encoding behaviour, and SVG/ASCII
-rendering.
+`src/tests.rs` holds known-answer tests for the internals, with values from
+Nayuki's C test suite.
 
 ## MolCrafts ecosystem
 
@@ -202,12 +220,11 @@ rendering.
 
 | Scope | License | |
 |-------|---------|--|
-| QR Code engine — `src/lib.rs` | **MIT**, Copyright (c) Project Nayuki | [LICENSE-MIT](LICENSE-MIT) |
-| Everything else — tests, `wasm/`, `molqrc_web/`, `scripts/`, docs | **BSD-3-Clause**, Copyright (c) 2024-2026 Roy Kid | [LICENSE-BSD-3-CLAUSE](LICENSE-BSD-3-CLAUSE) |
+| QR Code engine — `src/` except `src/tests.rs` | **MIT**, Copyright (c) Project Nayuki | [LICENSE-MIT](LICENSE-MIT) |
+| Everything else — `tests/`, `wasm/`, `molqrc_web/`, `scripts/`, `examples/`, docs | **BSD-3-Clause**, Copyright (c) 2024-2026 Roy Kid | [LICENSE-BSD-3-CLAUSE](LICENSE-BSD-3-CLAUSE) |
 
-`src/lib.rs` is not a derivative rewrite — it is Project Nayuki's file, byte for
-byte, so it keeps its original MIT licence and its copyright/permission notice
-is retained verbatim in the file header. Binary artifacts (the crates.io
+The engine is derived from Project Nayuki's `qrcodegen`, so it keeps that
+library's MIT licence and copyright notice. Binary artifacts (the crates.io
 package, the npm package, the `.wasm` files) contain both and are distributed
 under `MIT AND BSD-3-Clause`.
 

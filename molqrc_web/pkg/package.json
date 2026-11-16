@@ -11,7 +11,9 @@
   "files": [
     "molqrc_bg.wasm",
     "molqrc.js",
-    "molqrc.d.ts"
+    "molqrc.d.ts",
+    "LICENSE-BSD-3-CLAUSE",
+    "LICENSE-MIT"
   ],
   "main": "molqrc.js",
   "homepage": "https://github.com/MolCrafts/molqrc",

@@ -17,6 +17,9 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 [[package]]
 name = "molqrc"
 version = "0.2.0"
+dependencies = [
+ "qrcodegen",
+]
 
 [[package]]
 name = "molqrc-wasm"
@@ -40,6 +43,11 @@ checksum = "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934"
 dependencies = [
  "unicode-ident",
 ]
+
+[[package]]
+name = "qrcodegen"
+version = "1.8.0"
+source = "git+https://github.com/nayuki/QR-Code-generator?rev=bcfe1b018cec5f1f91b5705eca5bb4cdd34e9f8d#bcfe1b018cec5f1f91b5705eca5bb4cdd34e9f8d"
 
 [[package]]
 name = "quote"
