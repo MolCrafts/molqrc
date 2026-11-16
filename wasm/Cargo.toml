@@ -1,14 +1,27 @@
 [package]
 name = "molqrc-wasm"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 description = "WebAssembly bindings for the molqrc QR Code generator"
-license = "BSD-3-Clause"
+# The bindings themselves are BSD-3-Clause, but the compiled .wasm statically
+# links the MIT-licensed engine from src/lib.rs, so the published artifact
+# carries both licences.
+license = "MIT AND BSD-3-Clause"
+homepage = "https://github.com/MolCrafts/molqrc"
 repository = "https://github.com/MolCrafts/molqrc"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-molqrc = { path = ".." }
+# `version` alongside `path` keeps the dependency resolvable from a registry
+# tarball as well as from the workspace.
+molqrc = { path = "..", version = "0.2.0" }
 wasm-bindgen = "=0.2.114"
+
+[package.metadata.wasm-pack.profile.release]
+# Binaryen wasm-opt runs after wasm-bindgen. -Oz optimises for size, which is
+# what matters for a payload downloaded by a browser; the encoder is far from
+# being a CPU bottleneck at QR-code scale. Matches the molrs wasm setup, which
+# uses -O1 for its compute-heavy kernels.
+wasm-opt = ["-Oz"]

@@ -27,10 +27,11 @@ Project Nayuki's `qrcodegen`. It produces the raw module grid of a QR symbol.
 
 ## Where things live
 
-- Library source: `src/lib.rs`
+- Library source: `src/lib.rs` — **vendored verbatim from upstream, do not edit**
 - Test suite: `src/tests.rs` (`#[cfg(test)] mod tests`)
-- WASM bindings crate: `wasm/` (`molqrc-wasm`)
+- WASM bindings crate: `wasm/` (`molqrc-wasm`) — where new behaviour belongs
 - Web app (interactive QR designer): `molqrc_web/` (built wasm in `molqrc_web/pkg/`)
+- Verification + tooling: `scripts/`, native reference dump in `examples/`
 - Passive project knowledge: `.claude/notes/`
 - Active runtime specs: `.claude/specs/`
 
@@ -45,27 +46,33 @@ For non-trivial work, prefer:
 ## What must never change casually
 
 - Public Rust API in `src/lib.rs` (`QrCode`, `QrSegment`, `QrCodeEcc`, …)
-- Fidelity to the upstream Project Nayuki `qrcodegen` algorithm
+- Fidelity to the upstream Project Nayuki `qrcodegen` algorithm. `src/lib.rs` is
+  byte-identical to upstream commit `f40366c`; `scripts/verify-upstream-fidelity.sh`
+  enforces this in CI. Concretely:
+  - **Never run `cargo fmt --all`** — it rewrites ~1080 of its 1288 lines.
+    Use `./scripts/fmt.sh`.
+  - **Never "fix" a Clippy lint in `src/lib.rs`** — the 6 it raises (and rustc's `deprecated`) are silenced
+    in `Cargo.toml` under `[lints.clippy]` / `[lints.rust]` on purpose. Fixing one forks the file.
+  - Optimising the engine forks it too. Performance work goes in `wasm/`.
 
 <!-- mol-agent:bootstrap:managed end -->
 
 ## CI
 
-One workflow per kind of work; shared setup comes from
-`MolCrafts/molcrafts-ci/actions/<name>@master`. `test / tier` picks the tier:
-the *fast* tier runs on a feature-branch push to MolCrafts; the *full* tier on
-every push to a fork (so a branch is proven before its pull request), on
-`dev`/`master`/`main` on MolCrafts, on pull requests, tags and dispatches. A
-pull request inside a fork is skipped (its push already ran the full tier).
-The toolchain is whatever `rust-toolchain.toml` names, locally and in CI
-(setup-rust).
+The MolCrafts CI scheme, shared jobs from `MolCrafts/molcrafts-ci` pinned to an
+immutable SHA (`3cc26f4`). Every workflow starts with the shared `context` job;
+its `tier` output picks fast (a feature-branch push to MolCrafts: Linux only)
+or full (fork pushes, `dev`/`master`, pull requests, tags: Linux, macOS,
+Windows), and `skip-pr` skips a pull request inside a fork that its push
+already ran. The toolchain is whatever `rust-toolchain.toml` names, locally and
+in CI (setup-rust).
 
-| workflow | fast tier (feature branch on MolCrafts) | full tier (fork pushes, dev/master/main, PRs, tags) | MolCrafts only |
-|---|---|---|---|
-| `lint.yml` | `lint / rust` (fmt, clippy `-D warnings`, rustdoc `-D warnings`) | same | — |
-| `test.yml` | `test / tier`, `test / rust (ubuntu-latest)` | `test / tier`, `test / rust ({ubuntu,macos,windows}-latest)`, `test / wasm` (wasm32 build) | — |
-| `release.yml` | — | — | `v*` tag: lint + test + `release / crates` (`cargo publish`); `workflow_dispatch` = dry run (`cargo publish --dry-run`) |
+| workflow | jobs |
+|---|---|
+| `test.yml` | `test / lint` (`scripts/fmt.sh --check`, clippy `-D warnings`, rustdoc `-D warnings`), `test / upstream fidelity`, `test / rust (<os>)`, `test / wasm` (wasm-pack build + wasm/native parity), `test / workflows` (check-workflows), `test / result` |
+| `release.yml` | `v*` tag on MolCrafts: re-runs `test.yml`, checks the tag against both crate versions, publishes `molqrc` to crates.io (`crates-io` environment, `CARGO_REGISTRY_TOKEN`) and `@molcrafts/molqrc-wasm` to npm (`npm` environment, `NPM_TOKEN`); `workflow_dispatch` = dry run |
 
-The `protect-master` ruleset on `master` requires a pull request, blocks force
-pushes and deletion, and requires `test / tier` and the full-tier `lint /` and `test /`
-checks. Releases need the `CARGO_REGISTRY_TOKEN` secret on MolCrafts.
+`.github/release.toml` declares the publishing targets. `test / result` is the
+one required status check (`ci` ruleset on `dev` and `master`); `protect-master`
+requires a pull request and blocks force pushes and deletion on `master`.
+Work lands on `dev`; `master` is the release branch.
