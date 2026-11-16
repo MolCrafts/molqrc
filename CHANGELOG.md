@@ -5,6 +5,46 @@ All notable changes to this project are documented here. The format follows
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) (pre-1.0:
 breaking changes may land in a minor release).
 
+## [Unreleased]
+
+### Changed
+
+- **The engine is a modular Rust rewrite, no longer a vendored copy of
+  `qrcodegen`.** The single 1288-line `src/lib.rs` is split by concern:
+  segments, bit buffer, capacity tables, Reed-Solomon and interleaving, the
+  module canvas, the mask penalty and the encoding pipeline. Output is unchanged:
+  every symbol, error and panic is identical to Project Nayuki's `qrcodegen`.
+- `QrSegment::data()` returns `&[bool]` instead of `&Vec<bool>`.
+- `QrCode`, `QrSegment`, `QrSegmentMode`, `QrCodeEcc`, `Version`, `Mask` and
+  `BitBuffer` implement `Debug` and `Hash` where they did not.
+  - `DataTooLong` is now `Copy` and `PartialEq`.
+  - `BitBuffer` is now `Default`.
+- The engine keeps its MIT licence as a derivative of `qrcodegen`.
+
+### Added
+
+- **`tests/conformance.rs`** checks every case module for module against
+  `qrcodegen`, a git dev-dependency pinned to upstream `bcfe1b0`. The cases:
+  - every capacity boundary (version × ECC level × mode);
+  - character-count field limits around versions 9/10 and 26/27, Kanji and ECI included;
+  - every version × level × mask through `encode_codewords`;
+  - degenerate payloads under automatic masking, and sparse payloads where
+    the balance rule decides the mask;
+  - ECI designator widths;
+  - mode detection over the first 12288 code points;
+  - mixed segment lists;
+  - a seeded copy of Nayuki's cross-language batch tester.
+- **`tests/panics.rs`** checks that invalid arguments panic exactly where
+  `qrcodegen` panics.
+
+### Removed
+
+- `scripts/verify-upstream-fidelity.sh`, `scripts/upstream.expected.diff` and
+  `scripts/fmt.sh`, together with the `test / upstream fidelity` CI job and the
+  Clippy/rustc allow-list in `Cargo.toml`. `cargo fmt --all` and full Clippy now
+  apply to the whole crate.
+- Encoding tests that only checked `is_ok()`; the conformance suite covers them exactly.
+
 ## [0.2.0] - 2026-08-06
 
 Complete rewrite: molqrc is now a Rust library with WebAssembly bindings. The

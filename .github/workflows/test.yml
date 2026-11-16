@@ -37,29 +37,12 @@ jobs:
       - uses: MolCrafts/molcrafts-ci/actions/setup-rust@3cc26f4ff1b8b6d09365d677c4a05cc8cbb70a76
         with:
           cache: lint
-      # `cargo fmt --all` is deliberately not used: it would reformat the
-      # vendored src/lib.rs. See scripts/fmt.sh.
       - name: Format
-        run: ./scripts/fmt.sh --check
+        run: cargo fmt --all --check
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Rustdoc
         run: cargo doc --workspace --no-deps
-
-  fidelity:
-    if: needs.context.outputs.skip-pr != 'true'
-    needs:
-    - context
-    name: test / upstream fidelity
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      # The correctness claim for this crate is that src/lib.rs *is* Project
-      # Nayuki's reference implementation. This job keeps that true: any edit
-      # to the QR algorithm fails unless it is recorded as a deliberate
-      # divergence in scripts/upstream.expected.diff.
-      - name: Verify src/lib.rs matches upstream qrcodegen
-        run: ./scripts/verify-upstream-fidelity.sh
 
   rust:
     if: needs.context.outputs.skip-pr != 'true'
@@ -76,6 +59,9 @@ jobs:
       - uses: MolCrafts/molcrafts-ci/actions/setup-rust@3cc26f4ff1b8b6d09365d677c4a05cc8cbb70a76
         with:
           cache: test
+      # Includes tests/conformance.rs: every case is encoded by Project
+      # Nayuki's qrcodegen too (git dev-dependency) and must match it module
+      # for module.
       - run: cargo test --workspace
 
   wasm:
@@ -112,7 +98,7 @@ jobs:
 
   result:
     name: test / result
-    needs: [context, lint, fidelity, rust, wasm, workflow-policy]
+    needs: [context, lint, rust, wasm, workflow-policy]
     if: always()
     runs-on: ubuntu-latest
     steps:

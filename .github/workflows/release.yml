@@ -24,7 +24,7 @@ jobs:
     uses: MolCrafts/molcrafts-ci/.github/workflows/context.yml@3cc26f4ff1b8b6d09365d677c4a05cc8cbb70a76
 
   # Never publish a release that fails the correctness guarantees (format,
-  # clippy, upstream fidelity, tests on every OS, wasm/native parity).
+  # clippy, tests and the Nayuki conformance suite on every OS, wasm/native parity).
   verify:
     if: needs.context.outputs.skip-pr != 'true'
     needs:

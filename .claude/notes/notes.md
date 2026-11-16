@@ -2,31 +2,39 @@
 
 Evolving decisions captured by `/mol:note`.
 
-## Fidelity to upstream is the correctness argument (2026-08-06)
+## Conformance to upstream is the correctness argument (2026-11-16)
 
-`src/lib.rs` is byte-identical to Project Nayuki's `qrcodegen` (Rust), pinned at
-commit `f40366c`. That identity — verified mechanically by
-`scripts/verify-upstream-fidelity.sh` in CI — is what justifies trusting the
-encoder, far more than the test suite does.
+Supersedes the 2026-08-06 "byte-identical vendored file" decision. The user
+asked for a refactor of molqrc in Rust that passes every corner case of Nayuki's
+QR-Code-generator.
+- **Engine:** now a modular rewrite in `src/`.
+- **Correctness:** defined by agreement with `qrcodegen` itself, pulled in as a
+  git dev-dependency pinned to upstream `bcfe1b0`. Do not use crates.io 1.8.0:
+  it predates several upstream changes.
+- **What `tests/conformance.rs` compares:** version, level, mask and every module
+  on success; error variant, numbers and message on failure.
+- **Cases:**
+  - every capacity boundary (version × level × mode);
+  - character-count field limits at 9/10 and 26/27;
+  - every mask through `encode_codewords`;
+  - sparse payloads where the N4 balance rule decides the mask (random dense
+    payloads almost never reach it; found when an N4 mutant survived);
+  - ECI widths;
+  - mode detection;
+  - mixed segments;
+  - the trial distribution of Nayuki's removed `qrcodegen-batch-test.py`.
+- **Panics:** `tests/panics.rs` checks panic-for-panic parity.
+- **Mutation check:** 51 injected single-line bugs, each killed by the suite.
 
-Consequences, all of which have bitten already:
-
-- `cargo fmt --all` rewrites ~1080 of its 1288 lines. Use `./scripts/fmt.sh`.
-  rustfmt's own `ignore` key is nightly-only, so the exclusion cannot live in
-  `rustfmt.toml`.
-- Clippy raises 6 style lints there. They are silenced package-wide in
-  `Cargo.toml` under `[lints.clippy]` rather than fixed, because fixing any of
-  them forks the file. New code in `wasm/` is linted strictly.
-- Optimising the engine (e.g. the `Vec::remove(0)` in
-  `reed_solomon_compute_remainder`, or a GF(256) lookup table) would also fork
-  it. Performance work belongs in `wasm/` or in a separate module.
+The fidelity script, `upstream.expected.diff`, `fmt.sh` and the Clippy allow-list
+are gone. `cargo fmt --all` and full Clippy apply to the whole crate.
 
 ## Licence declaration (2026-08-07)
 
 The project is licensed **file by file**: `MIT AND BSD-3-Clause`.
 
-- `src/lib.rs` — MIT, Copyright (c) Project Nayuki. It is upstream's file byte
-  for byte, not a derivative rewrite, so it keeps upstream's licence.
+- `src/` (engine) — MIT, Copyright (c) Project Nayuki, as a derivative of
+  upstream's library (updated 2026-11-16; was "byte for byte").
 - Everything else — BSD-3-Clause, Copyright (c) 2024-2026 Roy Kid.
 
 Texts live in `LICENSE-MIT` and `LICENSE-BSD-3-CLAUSE`; `LICENSE` explains the
@@ -37,7 +45,7 @@ Supersedes the 2026-08-06 decision to declare the crate BSD-3-Clause only.
 
 ## Two independent verification layers (2026-08-06)
 
-1. `verify-upstream-fidelity.sh` — the algorithm is the reference implementation.
+1. `tests/conformance.rs` — output equals the reference implementation.
 2. `verify-wasm-parity.sh` — the compiled wasm encodes identically to native
    (32 text×ECL cases × 3 APIs), catching wasm-bindgen/wasm-opt regressions that
    native tests cannot see.

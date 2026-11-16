@@ -22,14 +22,19 @@ mol_project:
 
 ## What this repo is
 
-`molqrc` is a Rust QR Code generator library (Version 1–40) — a faithful port of
-Project Nayuki's `qrcodegen`. It produces the raw module grid of a QR symbol.
+`molqrc` is a Rust QR Code generator library (Version 1–40), derived from
+Project Nayuki's `qrcodegen` and conformance-tested against it. It produces the
+raw module grid of a QR symbol.
 
 ## Where things live
 
-- Library source: `src/lib.rs` — **vendored verbatim from upstream, do not edit**
-- Test suite: `src/tests.rs` (`#[cfg(test)] mod tests`)
-- WASM bindings crate: `wasm/` (`molqrc-wasm`) — where new behaviour belongs
+- Engine: `src/` — `lib.rs` re-exports; `segment.rs`/`bits.rs` (segments),
+  `capacity.rs` (tables), `reed_solomon.rs` (ECC + interleave), `canvas.rs`
+  (drawing, masks), `penalty.rs` (mask choice), `qrcode.rs` (pipeline)
+- Known-answer tests of internals: `src/tests.rs`
+- Conformance against Nayuki's `qrcodegen` (git dev-dependency): `tests/conformance.rs`,
+  `tests/panics.rs`
+- WASM bindings crate: `wasm/` (`molqrc-wasm`)
 - Web app (interactive QR designer): `molqrc_web/` (built wasm in `molqrc_web/pkg/`)
 - Verification + tooling: `scripts/`, native reference dump in `examples/`
 - Passive project knowledge: `.claude/notes/`
@@ -46,14 +51,11 @@ For non-trivial work, prefer:
 ## What must never change casually
 
 - Public Rust API in `src/lib.rs` (`QrCode`, `QrSegment`, `QrCodeEcc`, …)
-- Fidelity to the upstream Project Nayuki `qrcodegen` algorithm. `src/lib.rs` is
-  byte-identical to upstream commit `f40366c`; `scripts/verify-upstream-fidelity.sh`
-  enforces this in CI. Concretely:
-  - **Never run `cargo fmt --all`** — it rewrites ~1080 of its 1288 lines.
-    Use `./scripts/fmt.sh`.
-  - **Never "fix" a Clippy lint in `src/lib.rs`** — the 6 it raises (and rustc's `deprecated`) are silenced
-    in `Cargo.toml` under `[lints.clippy]` / `[lints.rust]` on purpose. Fixing one forks the file.
-  - Optimising the engine forks it too. Performance work goes in `wasm/`.
+- Output identical to Project Nayuki's `qrcodegen` (pinned dev-dependency,
+  upstream `bcfe1b0`): same version, level, mask and modules, same errors, same
+  panics. `tests/conformance.rs` is the correctness argument. A behaviour change
+  is a conformance failure, not a test to update. Every new test gate must be
+  shown to fail under a deliberately injected bug.
 
 <!-- mol-agent:bootstrap:managed end -->
 
@@ -69,7 +71,7 @@ in CI (setup-rust).
 
 | workflow | jobs |
 |---|---|
-| `test.yml` | `test / lint` (`scripts/fmt.sh --check`, clippy `-D warnings`, rustdoc `-D warnings`), `test / upstream fidelity`, `test / rust (<os>)`, `test / wasm` (wasm-pack build + wasm/native parity), `test / workflows` (check-workflows), `test / result` |
+| `test.yml` | `test / lint` (`cargo fmt --all --check`, clippy `-D warnings`, rustdoc `-D warnings`), `test / rust (<os>)` (unit + conformance), `test / wasm` (wasm-pack build + wasm/native parity), `test / workflows` (check-workflows), `test / result` |
 | `release.yml` | `v*` tag on MolCrafts: re-runs `test.yml`, checks the tag against both crate versions, publishes `molqrc` to crates.io (`crates-io` environment, `CARGO_REGISTRY_TOKEN`) and `@molcrafts/molqrc-wasm` to npm (`npm` environment, `NPM_TOKEN`); `workflow_dispatch` = dry run |
 
 `.github/release.toml` declares the publishing targets. `test / result` is the

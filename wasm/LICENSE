@@ -8,18 +8,16 @@ redistributing molqrc means carrying both notices below.
 
 ## MIT — the QR Code engine
 
-`src/lib.rs` is vendored byte-for-byte from Project Nayuki's `qrcodegen` (Rust),
-pinned at upstream commit f40366c40d8d1956081f7ec643d240c02a81df52. It is not a
-derivative rewrite: it is that file, and it remains under its original MIT
-licence, Copyright (c) Project Nayuki. The copyright and permission notice is
-retained verbatim in the file header, and `scripts/verify-upstream-fidelity.sh`
-verifies in CI that the file has not drifted.
+The engine in `src/` is derived from Project Nayuki's `qrcodegen` (Rust),
+https://github.com/nayuki/QR-Code-generator. It remains under that library's
+MIT licence, Copyright (c) Project Nayuki, and every engine file says so in its
+header.
 
 Full text: LICENSE-MIT
 
 ## BSD-3-Clause — everything else
 
-The test suite (`src/tests.rs`), the WebAssembly bindings (`wasm/`), the web
+The test suites (`src/tests.rs`, `tests/`), the WebAssembly bindings (`wasm/`), the web
 demo (`molqrc_web/`), the verification tooling (`scripts/`, `examples/`) and the
 documentation are original work, Copyright (c) 2024-2026 Roy Kid, licensed under
 the BSD 3-Clause License.

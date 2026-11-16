@@ -2,20 +2,19 @@
 name = "molqrc"
 version = "0.2.0"
 edition = "2021"
-description = "High-quality QR Code generator library — a faithful Rust port of Project Nayuki's qrcodegen"
+description = "QR Code generator library, conformance-tested against Project Nayuki's qrcodegen"
 homepage = "https://github.com/MolCrafts/molqrc"
 repository = "https://github.com/MolCrafts/molqrc"
 readme = "README.md"
 keywords = ["qr-code", "barcode", "encoder", "image"]
 categories = ["encoding", "multimedia::images"]
-# src/lib.rs is vendored verbatim from Project Nayuki's qrcodegen and stays
-# under its original MIT licence; everything else in the crate is BSD-3-Clause.
-# See LICENSE, LICENSE-MIT and LICENSE-BSD-3-CLAUSE.
+# The engine (src/) is derived from Project Nayuki's qrcodegen and stays under
+# its MIT licence; everything else is BSD-3-Clause. See LICENSE.
 license = "MIT AND BSD-3-Clause"
 # The web demo carries a committed wasm build; keeping it out of the crate
-# tarball avoids shipping a binary artifact to crates.io. scripts/ is kept so
-# downstream users can re-run the upstream fidelity check themselves.
-exclude = ["molqrc_web/", ".github/", ".claude/", "CLAUDE.md", "**/.DS_Store"]
+# tarball avoids shipping a binary artifact to crates.io. tests/ needs the git
+# dev-dependency, which the published manifest drops.
+exclude = ["molqrc_web/", ".github/", ".claude/", "CLAUDE.md", "scripts/", "tests/", "**/.DS_Store"]
 
 [lib]
 name = "molqrc"
@@ -23,21 +22,8 @@ name = "molqrc"
 [workspace]
 members = ["wasm"]
 
-# src/lib.rs is vendored verbatim from Project Nayuki's qrcodegen and is
-# verified byte-for-byte by scripts/verify-upstream-fidelity.sh. Clippy's style
-# suggestions there are all valid in the abstract, but acting on any of them
-# would fork the file from upstream and forfeit the fidelity guarantee — which
-# is this crate's entire correctness argument. So they are silenced for this
-# package rather than "fixed". New code lives in wasm/, which is linted strictly.
-[lints.rust]
-# Upstream still spells `std::i32::MAX`, which current rustc deprecates in
-# favour of `i32::MAX`. Same reasoning as below: the vendored file is not edited.
-deprecated = "allow"
-
-[lints.clippy]
-legacy_numeric_constants = "allow"
-manual_contains = "allow"
-manual_is_ascii_check = "allow"
-manual_range_contains = "allow"
-nonminimal_bool = "allow"
-unnecessary_map_or = "allow"
+[dev-dependencies]
+# The reference implementation the engine is checked against
+# (tests/conformance.rs). Pinned to an upstream commit; a dev-dependency
+# without a version is dropped from the published manifest.
+qrcodegen = { git = "https://github.com/nayuki/QR-Code-generator", rev = "bcfe1b018cec5f1f91b5705eca5bb4cdd34e9f8d" }
