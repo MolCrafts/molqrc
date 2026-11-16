@@ -1,0 +1,29 @@
+@@ -63,16 +63,16 @@
+ //! ```
+ //! 
+ //! Simple operation:
+-//! 
+-//! ```
++//!
++//! ```ignore
+ //! let qr = QrCode::encode_text("Hello, world!",
+ //!     QrCodeEcc::Medium).unwrap();
+ //! let svg = to_svg_string(&qr, 4);  // See molqrc-demo
+ //! ```
+ //! 
+ //! Manual operation:
+-//! 
+-//! ```
++//!
++//! ```ignore
+ //! let text: &str = "3141592653589793238462643383";
+ //! let segs = QrSegment::make_segments(text);
+ //! let qr = QrCode::encode_segments_advanced(&segs, QrCodeEcc::High,
+@@ -1282,3 +1282,7 @@
+ fn get_bit(x: u32, i: i32) -> bool {
+ 	(x >> i) & 1 != 0
+ }
++
++
++#[cfg(test)]
++mod tests;

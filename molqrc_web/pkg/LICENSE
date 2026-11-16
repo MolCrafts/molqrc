@@ -1,0 +1,33 @@
+molqrc is dual-licensed, file by file. The SPDX expression for the project as a
+whole is:
+
+    MIT AND BSD-3-Clause
+
+Both licences are permissive and impose only attribution requirements, so
+redistributing molqrc means carrying both notices below.
+
+## MIT — the QR Code engine
+
+`src/lib.rs` is vendored byte-for-byte from Project Nayuki's `qrcodegen` (Rust),
+pinned at upstream commit f40366c40d8d1956081f7ec643d240c02a81df52. It is not a
+derivative rewrite: it is that file, and it remains under its original MIT
+licence, Copyright (c) Project Nayuki. The copyright and permission notice is
+retained verbatim in the file header, and `scripts/verify-upstream-fidelity.sh`
+verifies in CI that the file has not drifted.
+
+Full text: LICENSE-MIT
+
+## BSD-3-Clause — everything else
+
+The test suite (`src/tests.rs`), the WebAssembly bindings (`wasm/`), the web
+demo (`molqrc_web/`), the verification tooling (`scripts/`, `examples/`) and the
+documentation are original work, Copyright (c) 2024-2026 Roy Kid, licensed under
+the BSD 3-Clause License.
+
+Full text: LICENSE-BSD-3-CLAUSE
+
+## Binary distributions
+
+Compiled artifacts — the crates.io package, the `@molcrafts/molqrc-wasm` npm
+package and the `.wasm` binaries — contain code under both licences, and are
+therefore distributed under `MIT AND BSD-3-Clause`.
